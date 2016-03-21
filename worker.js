@@ -17,13 +17,14 @@ class FatusWorker extends EventEmitter{
     constructor (fatusQueue){
         super();
         this.name = shortid.generate();
-        this.fatus = fatusQueue;
+        this.fatus = fatusQueue
         console.log(MODULE_NAME + ': just created %s', this.name);
         //util.inherits(this(),EventEmitter);
     }
+
+    
 
 }
 
 module.exports = FatusWorker;
 
-//export default FatusWorker;
