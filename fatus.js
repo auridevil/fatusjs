@@ -1,13 +1,15 @@
 
 'use strict';
 
-var MODULE_NAME = 'Fatusjs'
-var FATUS_QUEUE_NAME = process.env.FATUS_QUEUE_NAME || 'fatusjs-queue';
-var FATUS_MAX_WORKER = process.env.FATUS_MAX_WORKER || 5;
-var shortid = require('shortid');
-var AzureQueue = require('./azurequeue');
-var Job = require('./job');
-var FatusWorker = require('./worker');
+const MODULE_NAME = 'Fatusjs'
+const FATUS_QUEUE_NAME = process.env.FATUS_QUEUE_NAME || 'fatusjs-queue';
+const FATUS_MAX_WORKER = process.env.FATUS_MAX_WORKER || 5;
+const EventEmitter = require('events');
+const shortid = require('shortid');
+const AzureQueue = require('./azurequeue');
+const Job = require('./job');
+const FatusWorker = require('./worker');
+const assert = require('assert');
 
 /** singleton */
 let singleton = Symbol();
@@ -17,7 +19,7 @@ let singletonEnforcer = Symbol();
 /**
  * Lightweight azure queue job processor
  */
-class Fatusjs{
+class Fatusjs extends EventEmitter{
 
     /**
      * constructor for the fatus queue
@@ -27,6 +29,7 @@ class Fatusjs{
         if(enforcer != singletonEnforcer){
             throw "Cannot construct singleton";
         }
+        super();
         this.queueMgr = new AzureQueue();
         this.queueMgr.createQueue(
             FATUS_QUEUE_NAME,
@@ -71,6 +74,8 @@ class Fatusjs{
      * @param onComplete
      */
     insertInQueue(msg,onComplete){
+        assert.equal(typeof msg,'object','msg must be an object');
+        assert.equal(typeof onComplete,'function','onComplete must be a function');
         let th = this;
         this.queueMgr.insertInQueue(
             FATUS_QUEUE_NAME,
@@ -87,6 +92,7 @@ class Fatusjs{
      * @param onGet callback function
      */
     getQueueTop(onGet){
+        assert.equal(typeof onGet,'function','onGet must be a function');
         this.queueMgr.getMessage(FATUS_QUEUE_NAME,{},onGet);
     }
 
@@ -95,6 +101,7 @@ class Fatusjs{
      * @param onGet
      */
     getQueueSize(onGet){
+        assert.equal(typeof onGet,'function','onGet must be a function');
         this.queueMgr.countQueue(FATUS_QUEUE_NAME,onGet);
     }
 
@@ -104,14 +111,28 @@ class Fatusjs{
      * @param onDelete
      */
     popMsg(msg,onDelete){
+        assert.equal(typeof onDelete,'function','onDelete must be a function');
+        assert.equal(typeof msg,'object','msg must be an object');
         this.queueMgr.deleteMessage(FATUS_QUEUE_NAME,msg.messageId,msg.popReceipt,{},onDelete);
     }
+
+    /**
+     * update a message
+     * @param msg
+     * @param onUpdate
+     */
+    updateMsg(msg,onUpdate){
+        assert.equal(typeof onUpdate,'function','onUpdate must be a function');
+        assert.equal(typeof msg,'object','msg must be an object');
+        this.queueMgr.updateMessage(FATUS_QUEUE_NAME,msg.messageId,msg.popReceipt,null,msg,{},onUpdate);
+        }
 
     /**
      * peek at the top of the cue
      * @param onGet
      */
     peekTop(onGet){
+        assert.equal(typeof onGet,'function','onGet must be a function');
         this.queueMgr.peekMsg(FATUS_QUEUE_NAME,onGet);
     }
 
@@ -121,6 +142,7 @@ class Fatusjs{
      * @param onGet
      */
     getAll(onGet){
+        assert.equal(typeof onGet,'function','onGet must be a function');
         this.queueMgr.peekQueue(FATUS_QUEUE_NAME,onGet);
     }
 

@@ -4,10 +4,11 @@
 'use strict';
 
 
-var DEFUALT_VISIBILITY_TIMEOUT = 480;
-var azureQueue = require('azure-queue-node');
-var underscore = require('underscore');
-var async = require('async');
+const DEFUALT_VISIBILITY_TIMEOUT = 480;
+const azureQueue = require('azure-queue-node');
+const underscore = require('underscore');
+const async = require('async');
+const assert = require('assert');
 
 
 /**
@@ -29,6 +30,8 @@ class AzureQueue{
      * @param onComplete
      */
     insertInQueue(queueName,objects,onComplete){
+        assert.equal(typeof queueName,'string','queueName must be an string');
+        assert.equal(typeof onComplete,'function','onComplete must be a function');
         this.queueClient.putMessage(queueName,objects,{},onComplete);
 
     }
@@ -39,6 +42,8 @@ class AzureQueue{
      * @param onCreate
      */
     createQueue(queueName,onCreate){
+        assert.equal(typeof queueName,'string','queueName must be an string');
+        assert.equal(typeof onCreate,'function','onCreate must be a function');
         this.queueClient.createQueue(queueName,onCreate);
     }
 
@@ -49,6 +54,8 @@ class AzureQueue{
      * @param onGet
      */
     getMessage(queueName,option,onGet){
+        assert.equal(typeof queueName,'string','queueName must be an string');
+        assert.equal(typeof onGet,'function','onGet must be a function');
         var timeOutOption = {visibilityTimeout : DEFUALT_VISIBILITY_TIMEOUT}
         option = underscore.extend(timeOutOption,option);
         this.queueClient.getMessages(
@@ -64,6 +71,8 @@ class AzureQueue{
      * @param onOk
      */
     clearQueue(queueName,onOk){
+        assert.equal(typeof queueName,'string','queueName must be an string');
+        assert.equal(typeof onOk,'function','onOk must be a function');
         this.queueClient.clearMessages(queueName,{},onOk);
     }
 
@@ -73,6 +82,8 @@ class AzureQueue{
      * @param onCount
      */
     countQueue(queueName,onCount){
+        assert.equal(typeof queueName,'string','queueName must be an string');
+        assert.equal(typeof onCount,'function','onCount must be a function');
         this.queueClient.countMessages(queueName,{},onCount);
     }
 
@@ -82,6 +93,8 @@ class AzureQueue{
      * @param onDone
      */
     deleteQueue(queueName,onDone){
+        assert.equal(typeof queueName,'string','queueName must be an string');
+        assert.equal(typeof onDone,'function','onDone must be a function');
         this.queueClient.deleteQueue(queueName,onDone);
     }
 
@@ -94,7 +107,30 @@ class AzureQueue{
      * @param onDelete
      */
     deleteMessage(queueName,messageId,popReceipt,options,onDelete){
+        assert.equal(typeof queueName,'string','queueName must be an string');
+        assert.equal(typeof messageId,'string','messageId must be a function');
+        assert.equal(typeof popReceipt,'string','popReceipt must be a function');
+        assert.equal(typeof onDelete,'function','onDelete must be a function');
         this.queueClient.deleteMessage(queueName,messageId,popReceipt,options,onDelete);
+    }
+
+    /**
+     * update a message in queue
+     * @param queueName
+     * @param messageId
+     * @param popReceipt
+     * @param visibilityTimeout
+     * @param msg
+     * @param options
+     * @param onUpdate
+     */
+    updateMessage(queueName,messageId,popReceipt,visibilityTimeout,msg,options,onUpdate){
+        assert.equal(typeof queueName,'string','queueName must be an string');
+        assert.equal(typeof messageId,'string','messageId must be a function');
+        assert.equal(typeof popReceipt,'string','popReceipt must be a function');
+        assert.equal(typeof msg,'object','msg must be a function');
+        assert.equal(typeof onUpdate,'function','onUpdate must be a function');
+        this.queueClient.updateMessage(queueName,messageId,popReceipt,visibilityTimeout||60,msg,options,onUpdate);
     }
 
     /**
@@ -104,6 +140,7 @@ class AzureQueue{
      * @param onGet
      */
     peekMsg(queueName,options,onGet){
+        assert.equal(typeof queueName,'string','queueName must be an string');
         this.queueClient.peekMessages(queueName,options,onGet);
     }
 
@@ -113,6 +150,8 @@ class AzureQueue{
      * @param onGet
      */
     peekQueue(queueName,onGet){
+        assert.equal(typeof queueName,'string','queueName must be an string');
+        assert.equal(typeof onGet,'function','onGet must be a function');
         var thisObj = this;
         async.waterfall([
                 function _getCount(wfcallback){
@@ -120,7 +159,8 @@ class AzureQueue{
                 },
                 function _putMessage(res,wfcallback){
                     thisObj.peekMsg(queueName,{maxMessages:res},wfcallback);
-                }
+                },
+
             ],
             onGet
         )
