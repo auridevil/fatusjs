@@ -89,9 +89,3 @@ fatusQueue.getAll(function onComplete(err,dat,dat2){
     console.log('PEEKALL' + util.inspect(err));
 });
 
-
-//
-//
-//DefaultEndpointsProtocol=https;AccountName=dgxsa001;AccountKey=SGbNPjwE83Amf60nF3LihUdKCQTmBIjvGVjNDJkRCWtjbD2u2O/BaHHCQhF+1nBs+m4eKca893Hl+oxeADXgDQ==;BlobEndpoint=https://dgxsa001.blob.core.windows.net/;TableEndpoint=https://dgxsa001.table.core.windows.net/;;FileEndpoint=https://dgxsa001.file.core.windows.net/
-//
-//QueueEndpoint=https://pizzayoudata.queue.core.windows.net/;AccountName=pizzayoudata;AccountKey=SGbNPjwE83Amf60nF3LihUdKCQTmBIjvGVjNDJkRCWtjbD2u2O/BaHHCQhF+1nBs+m4eKca893Hl+oxeADXgDQ==
