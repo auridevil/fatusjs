@@ -162,6 +162,5 @@ class Fatusjs extends EventEmitter{
 
 }
 
-
+/** Exports */
 module.exports = Fatusjs;
-//module.exports = FatusWorker;

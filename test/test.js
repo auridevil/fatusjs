@@ -1,14 +1,24 @@
 /**
  * Created by Aureliano on 21/03/2016.
+ *
+ *
+ * THIS TEST NEED HIGH TIMEOUT AND ALL VARS CONFIGURED:
+ *
+ * --timeout 150000 (mocha env)
+ * AZURE_STORAGE_ACCOUNT (env)
+ * AZURE_STORAGE_ACCESS_KEY (env)
+ * CLOUD_STORAGE_ACCOUNT (env)
+ *
  */
 
 
 var Fatusjs = require('../fatus');
 var util = require('util');
 var assert = require('assert');
-var funct = require('./simplefunction')
+var funct = require('./simplefunction');
+var MessageJob = require('./../messagejob');
 
-var msgObj = {
+var msgObjSimple = {
     module   : '/test/simplefunction',
     function : 'invoke',
     payload  : {
@@ -19,8 +29,14 @@ var msgObj = {
                 inner : true,
                 desc  : 'inner object'
         }
-    }
+    },
+    isSimple: true
 };
+
+var jobObj = new MessageJob();
+jobObj.setSimpleJob(msgObjSimple.module,msgObjSimple.function,msgObjSimple.payload,0,[]);
+
+var msgJson = jobObj.getMsg();
 
 describe('Init',function(){
 
@@ -76,7 +92,7 @@ describe('Run Processes',function(){
     it('should insert the job and process it',function(done){
         "use strict";
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
 
             setTimeout(function(){
@@ -116,43 +132,43 @@ describe('Load many process',function(){
     it('should insert many job and not fail',function(done){
         "use strict";
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
         })
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
         })
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
         })
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
         })
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
         })
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
         })
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
         })
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
         })
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
         })
 
-        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
             assert.equal(err,null);
         })
 

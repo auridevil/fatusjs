@@ -11,6 +11,7 @@
 const MODULE_NAME = 'FatusWorker';
 const EMPTY_QUEUE_RETRY_TIME = 4000; // millisec
 const MAX_WORKER_ATTEMPT = 2;
+const MessageJob = require('./messagejob');
 const shortid = require('shortid');
 const EventEmitter = require('events');
 const util = require('util');
@@ -19,6 +20,7 @@ const assert = require('assert');
 const retry = require('retry');
 const async = require('async');
 
+/** the worker for the fatus */
 class FatusWorker extends EventEmitter{
 
     /**
@@ -29,7 +31,7 @@ class FatusWorker extends EventEmitter{
         super();
         assert(typeof fatusQueue,'object','Missing fatusQueue in the fatus worker constructor');
         this.name = shortid.generate();
-        this.fatus = fatusQueue
+        this.fatus = fatusQueue;
         console.log(MODULE_NAME + '%s: just created', this.name);
         this.emit('load',this.name);
     }
@@ -66,7 +68,7 @@ class FatusWorker extends EventEmitter{
      */
     single(){
         let th = this;
-        let msgObj;
+        let msgObj,jobObj;
         try {
             async.waterfall([
                     // get work from queue
@@ -80,9 +82,10 @@ class FatusWorker extends EventEmitter{
                         assert(typeof msg, 'object', 'msg from queue is null');
                         msgObj = msg[0];
                         if(msgObj) {
-                            assert(typeof msgObj.messageText, 'object', 'msg from queue is invalid');
+                            jobObj = new MessageJob(msgObj);
                             console.log(MODULE_NAME + '%s: executing from queue ', th.name);
-                            th.executeJob(msgObj, th, wfcallback);
+                            jobObj.execute(th, wfcallback );
+                            //th.executeJob(msgObj, th, wfcallback);
                         }else{
                             wfcallback(new Error('queue is empty'),null);
                         }
@@ -94,17 +97,17 @@ class FatusWorker extends EventEmitter{
                 ],
                 // update if error, else ok
                 function _onFinish(err,val){
-                    if(err && typeof err == 'error' && msgObj){
+                    if(err && typeof err == 'error' && msgObj && jobObj){
                         // async error, update message
-                        th.updateMsgOnError(msgObj, err, th);
+                        th.updateMsgOnError(jobObj, msgObj, err, th);
                     }
                     th.emit('runcomplete');
                     th.run();
                 });
         }catch(err){
             // sync error, update message
-            if(msgObj) {
-                th.updateMsgOnError(msgObj, err, th);
+            if(msgObj && jobObj) {
+                th.updateMsgOnError(jobObj, msgObj, err, th);
             }s
         }
     }
@@ -115,47 +118,50 @@ class FatusWorker extends EventEmitter{
      * @param err the error that caused the code to arrive here
      * @param th the reference to the worker (pointer)
      */
-    updateMsgOnError(msgObj, err, th) {
-        msgObj.messageText.retry = msgObj.messageText.retry ? (msgObj.messageText.retry + 1) : 1;
-        if (!msgObj.messageText.failArray) {
-            msgObj.messageText.failArray = [];
-        }
-        msgObj.messageText.failArray.push(util.inspect(err));
-        th.updateMessageFT(msgObj, th, wfcallback);
+    updateMsgOnError(jobObj, msgObj, err, th) {
+        jobObj.fail(err)
+        msgObj.messageText = jobObj.getMsg();
+        th.updateMessageFT(msgObj, th, function onUpdate(err,res){
+            if(err){
+                console.log(MODULE_NAME + '%s: FATAL cannot update message');
+                console.error(err);
+            }else{
+                console.log(MODULE_NAME + '%s: update OK');
+            }
+        });
     }
 
-    /**
-     * run the job at low level - used for overriding
-     * @param msg
-     * @param th
-     * @param callback
-     */
-    executeJob(msg, th, callback) {
-        //th.emit('msg-loaded', msg.messageText);
-        th.execute(msg.messageText.module, msg.messageText.function, msg.messageText.payload, callback);
-    }
-
-    /**
-     * execute the job at the lowest level
-     * @param moduleName the module name to be executed (with path)
-     * @param funct the function to be executed (the name of)
-     * @param payload the payload to pass at the function invoked
-     * @param onComplete callback
-     */
-    execute(moduleName,funct,payload,onComplete){
-        assert(typeof moduleName,'string','moduleName must be a string');
-        assert(typeof funct,'string','funct must be a string');
-        assert(typeof payload,'object','payload must be a string');
-        assert(typeof onComplete,'function','payload must be a string');
-        try{
-            let module = this.getModule(moduleName);
-            module[funct](payload,this,onComplete);
-        }catch(error){
-            // sync errors
-            // manage errors
-            console.error(error);
-        }
-    }
+    ///**
+    // * run the job at low level - used for overriding
+    // * @param msg
+    // * @param th
+    // * @param callback
+    // */
+    //executeJob(msg, th, callback) {
+    //    th.execute(msg.messageText.module, msg.messageText.function, msg.messageText.payload, callback);
+    //}
+    //
+    ///**
+    // * execute the job at the lowest level
+    // * @param moduleName the module name to be executed (with path)
+    // * @param funct the function to be executed (the name of)
+    // * @param payload the payload to pass at the function invoked
+    // * @param onComplete callback
+    // */
+    //execute(moduleName,funct,payload,onComplete){
+    //    assert(typeof moduleName,'string','moduleName must be a string');
+    //    assert(typeof funct,'string','funct must be a string');
+    //    assert(typeof payload,'object','payload must be a string');
+    //    assert(typeof onComplete,'function','payload must be a string');
+    //    try{
+    //        let module = this.getModule(moduleName);
+    //        module[funct](payload,this,onComplete);
+    //    }catch(error){
+    //        // sync errors
+    //        // manage errors
+    //        console.error(error);
+    //    }
+    //}
 
     /**
      * get a new job from the queue
@@ -214,34 +220,6 @@ class FatusWorker extends EventEmitter{
                 })
             });
     }
-
-
-    /**
-     * return a moduble by name/path
-     * @param moduleName the pathname
-     * @returns a modole itself
-     */
-    getModule(moduleName){
-        assert(typeof moduleName,'string','moduleName must be a string');
-        return require(this._getPath(moduleName));
-    }
-
-    /**
-     * util method to get the path normalized
-     * @param inputPath
-     * @returns {string}
-     */
-    _getPath(inputPath){
-        assert(typeof inputPath,'string','inputPath must be a string');
-        var base = global.__base || __dirname + '/';
-        let normalizedPath = path.normalize(base + inputPath);
-        return normalizedPath;
-    }
-
-
-
-
-
 
 
 }
