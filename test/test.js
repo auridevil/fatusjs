@@ -5,87 +5,209 @@
 
 var Fatusjs = require('../fatus');
 var util = require('util');
-var fatusQueue = Fatusjs.instance;
+var assert = require('assert');
+var funct = require('./simplefunction')
 
-//
-//fatusQueue.insertInQueue({msg:'ciaone 1'},function onComplete(err,dat,dat2){
-//    "use strict";
-//    console.log(util.inspect(dat));
-//    console.log(util.inspect(dat2));
-//    console.log(util.inspect(err));
-//
-//})
-//
-//fatusQueue.insertInQueue({msg:'ciaone 2'},function onComplete(err,dat,dat2){
-//    "use strict";
-//    console.log(util.inspect(dat));
-//    console.log(util.inspect(dat2));
-//    console.log(util.inspect(err));
-//
-//})
-//
-//fatusQueue.insertInQueue({msg:'ciaone 3'},function onComplete(err,dat,dat2){
-//    "use strict";
-//    console.log(util.inspect(dat));
-//    console.log(util.inspect(dat2));
-//    console.log(util.inspect(err));
-//
-//})
-//
-//fatusQueue.insertInQueue({msg:'ciaone 4'},function onComplete(err,dat,dat2){
-//    "use strict";
-//    console.log(util.inspect(dat));
-//    console.log(util.inspect(dat2));
-//    console.log(util.inspect(err));
-//
-//})
-fatusQueue.insertInQueue({msg:'ciaone 1000',obj:{ciao:'ciao'}},function onComplete(err,dat,dat2){
-    "use strict";
-    console.log(util.inspect(dat));
-    console.log(util.inspect(dat2));
-    console.log(util.inspect(err));
-
-})
-
-//fatusQueue.insertInQueue(JSON.parse(JSON.stringify(fatusQueue.createNewJob({}))),function onComplete(){console.log('insert job complete')});
-
-
-
-fatusQueue.getQueueTop(function onComplete(err,dat,dat2){
-    "use strict";
-    console.log('GET' + util.inspect(dat));
-    console.log('GET' + util.inspect(dat2));
-    console.log('GET' + util.inspect(err));
-    if(dat && dat[0]){
-        fatusQueue.popMsg(dat[0],function onDelete(err,dat,dat2){
-            console.log('DEL' + util.inspect(dat));
-            console.log('DEL' + util.inspect(dat2));
-            console.log('DEL' + util.inspect(err));
-        })
+var msgObj = {
+    module   : '/test/simplefunction',
+    function : 'invoke',
+    payload  : {
+        mydata : 'hello',
+        who    : 'world',
+        arr    : [1,2,3,4,5,6,7,8,9],
+        obj    : {
+                inner : true,
+                desc  : 'inner object'
+        }
     }
+};
 
-})
+describe('Init',function(){
 
-fatusQueue.getQueueSize(function onComplete(err,dat,dat2){
-    "use strict";
-    console.log('COUNT' + util.inspect(dat));
-    console.log('COUNT' + util.inspect(dat2));
-    console.log('COUNT' + util.inspect(err));
+    var fatusQueue = Fatusjs.instance;
+    var fatus2 = Fatusjs.instance;
+
+    it('should get a fatus instance',function(){
+        "use strict";
+        assert.equal(typeof fatusQueue,'object');
+    })
+
+    it('should be singleton',function(){
+        "use strict";
+        assert.deepEqual(fatusQueue,fatus2);
+    })
+
+    it('should clear the worker and return size 0',function(done){
+        "use strict";
+
+        fatusQueue.clear(function onClear(err,res){
+            assert.equal(err,null);
+
+            fatusQueue.getQueueSize(function onGet(err,res){
+                assert.equal(err,null);
+                assert.equal(res,0);
+            });
+        });
+
+        setTimeout(done,6000);
+
+    })
+
+    it('should add worker',function(done){
+        "use strict";
+        fatusQueue.addWorker();
 
 
-})
+        setTimeout(done,10000);
+    })
 
-fatusQueue.peekTop(function onComplete(err,dat,dat2){
-    "use strict";
-    console.log('PEEK' + util.inspect(dat));
-    console.log('PEEK' + util.inspect(dat2));
-    console.log('PEEK' + util.inspect(err));
 });
 
-fatusQueue.getAll(function onComplete(err,dat,dat2){
-    "use strict";
-    console.log('PEEKALL' + util.inspect(dat));
-    console.log('PEEKALL' + util.inspect(dat2));
-    console.log('PEEKALL' + util.inspect(err));
+describe('Run Processes',function(){
+
+    var fatusQueue = Fatusjs.instance;
+
+    it('should get a fatus instance',function(){
+        "use strict";
+        assert.equal(typeof fatusQueue,'object');
+    })
+
+
+    it('should insert the job and process it',function(done){
+        "use strict";
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+
+            setTimeout(function(){
+                fatusQueue.getQueueSize(function onGet(err,res){
+                    assert.equal(err,null);
+                    assert.equal(res,0);
+                    console.log('queue is correctly empty')
+                });
+            },12000);
+
+            setTimeout(done,15000);
+
+        })
+
+    })
+
+    it('should add another worker',function(done){
+        "use strict";
+        fatusQueue.addWorker();
+
+        setTimeout(done,10000);
+    })
+
 });
 
+
+describe('Load many process',function(){
+
+    var fatusQueue = Fatusjs.instance;
+
+    it('should get a fatus instance',function(){
+        "use strict";
+        assert.equal(typeof fatusQueue,'object');
+    })
+
+
+    it('should insert many job and not fail',function(done){
+        "use strict";
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgObj,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        setTimeout(done,15000);
+
+
+    })
+
+
+});
+//
+//fatusQueue.insertInQueue({msg:'ciaone 1000',obj:{ciao:'ciao'}},function onComplete(err,dat,dat2){
+//    "use strict";
+//    console.log(util.inspect(dat));
+//    console.log(util.inspect(dat2));
+//    console.log(util.inspect(err));
+//
+//})
+//
+//
+//fatusQueue.getQueueTop(function onComplete(err,dat,dat2){
+//    "use strict";
+//    console.log('GET' + util.inspect(dat));
+//    console.log('GET' + util.inspect(dat2));
+//    console.log('GET' + util.inspect(err));
+//    if(dat && dat[0]){
+//        fatusQueue.popMsg(dat[0],function onDelete(err,dat,dat2){
+//            console.log('DEL' + util.inspect(dat));
+//            console.log('DEL' + util.inspect(dat2));
+//            console.log('DEL' + util.inspect(err));
+//        })
+//    }
+//
+//})
+//
+//fatusQueue.getQueueSize(function onComplete(err,dat,dat2){
+//    "use strict";
+//    console.log('COUNT' + util.inspect(dat));
+//    console.log('COUNT' + util.inspect(dat2));
+//    console.log('COUNT' + util.inspect(err));
+//
+//
+//})
+//
+//fatusQueue.peekTop(function onComplete(err,dat,dat2){
+//    "use strict";
+//    console.log('PEEK' + util.inspect(dat));
+//    console.log('PEEK' + util.inspect(dat2));
+//    console.log('PEEK' + util.inspect(err));
+//});
+//
+//fatusQueue.getAll(function onComplete(err,dat,dat2){
+//    "use strict";
+//    console.log('PEEKALL' + util.inspect(dat));
+//    console.log('PEEKALL' + util.inspect(dat2));
+//    console.log('PEEKALL' + util.inspect(err));
+//});
+//

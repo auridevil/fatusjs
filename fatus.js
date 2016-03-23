@@ -1,15 +1,19 @@
 
 'use strict';
 
+/** constants */
 const MODULE_NAME = 'Fatusjs'
 const FATUS_QUEUE_NAME = process.env.FATUS_QUEUE_NAME || 'fatusjs-queue';
 const FATUS_MAX_WORKER = process.env.FATUS_MAX_WORKER || 5;
+
+/** inner refs */
+const AzureQueue = require('./azurequeue');
+const FatusWorker = require('./worker');
+
+/** outher refs */
+const assert = require('assert');
 const EventEmitter = require('events');
 const shortid = require('shortid');
-const AzureQueue = require('./azurequeue');
-const Job = require('./job');
-const FatusWorker = require('./worker');
-const assert = require('assert');
 
 /** singleton */
 let singleton = Symbol();
@@ -30,6 +34,7 @@ class Fatusjs extends EventEmitter{
             throw "Cannot construct singleton";
         }
         super();
+        this.FatusWorker = FatusWorker; // put here to manage outside
         this.queueMgr = new AzureQueue();
         this.queueMgr.createQueue(
             FATUS_QUEUE_NAME,
@@ -65,6 +70,7 @@ class Fatusjs extends EventEmitter{
         if(this.workerPool.length<FATUS_MAX_WORKER){
             var worker = new FatusWorker(this);
             this.workerPool.push(worker);
+            worker.run();
         }
     }
 
@@ -129,7 +135,7 @@ class Fatusjs extends EventEmitter{
 
     /**
      * peek at the top of the cue
-     * @param onGet
+     * @param onGet function(err,res)
      */
     peekTop(onGet){
         assert.equal(typeof onGet,'function','onGet must be a function');
@@ -139,21 +145,23 @@ class Fatusjs extends EventEmitter{
 
     /**
      * return ALL the cue
-     * @param onGet
+     * @param onGet function(err,res)
      */
     getAll(onGet){
         assert.equal(typeof onGet,'function','onGet must be a function');
         this.queueMgr.peekQueue(FATUS_QUEUE_NAME,onGet);
     }
 
-
-    //createNewJob(conf){
-    //    var j = new Job(conf);
-    //    //j.on('done',function(dt,ar){});
-    //}
-
+    /**
+     * clear all the queue
+     * @param onClear function(err,res)
+     */
+    clear(onClear){
+        this.queueMgr.clearQueue(FATUS_QUEUE_NAME,onClear);
+    }
 
 }
 
 
 module.exports = Fatusjs;
+//module.exports = FatusWorker;
