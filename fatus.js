@@ -8,6 +8,7 @@ const FATUS_MAX_WORKER = process.env.FATUS_MAX_WORKER || 2;
 const FATUS_EQ_RETRY_TIME = process.env.FATUS_EQ_RETRY_TIME || 4000; // millisec
 const FATUS_WRK_RETRY_ATTEMP = process.env.FATUS_WRK_RETRY_ATTEMP || 2;
 const FATUS_WRK_STACK_TRSHLD = process.env.FATUS_WRK_STACK_TRSHLD || 10;
+const FATUS_JOB_RESERV_TIME = process.env.FATUS_JOB_RESERV_TIME || 60; // sec
 
 /** inner refs */
 const AzureQueue = require('./azurequeue');
@@ -76,6 +77,7 @@ class Fatusjs extends EventEmitter{
             worker.setRetryTime(FATUS_EQ_RETRY_TIME);
             worker.setMaxAttempts(FATUS_WRK_RETRY_ATTEMP);
             worker.setStackProtection(FATUS_WRK_STACK_TRSHLD);
+            worker.setReservationTime(FATUS_JOB_RESERV_TIME);
             this.workerPool.push(worker);
             worker.run();
         }

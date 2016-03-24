@@ -26,8 +26,8 @@ var msgObjSimple = {
         who    : 'world',
         arr    : [1,2,3,4,5,6,7,8,9],
         obj    : {
-                inner : true,
-                desc  : 'inner object'
+            inner : true,
+            desc  : 'inner object'
         }
     },
     isSimple: true
@@ -46,146 +46,146 @@ var stepObj = {
 
 
 /*************************** TEST SECTION *************************************/
-//describe('Init',function(){
-//
-//    var fatusQueue = Fatusjs.instance;
-//    var fatus2 = Fatusjs.instance;
-//
-//    it('should get a fatus instance',function(){
-//        "use strict";
-//        assert.equal(typeof fatusQueue,'object');
-//    })
-//
-//    it('should be singleton',function(){
-//        "use strict";
-//        assert.deepEqual(fatusQueue,fatus2);
-//    })
-//
-//    it('should clear the worker and return size 0',function(done){
-//        "use strict";
-//
-//        fatusQueue.clear(function onClear(err,res){
-//            assert.equal(err,null);
-//
-//            fatusQueue.getQueueSize(function onGet(err,res){
-//                assert.equal(err,null);
-//                assert.equal(res,0);
-//            });
-//        });
-//
-//        setTimeout(done,6000);
-//
-//    })
-//
-//    it('should add worker',function(done){
-//        "use strict";
-//        fatusQueue.addWorker();
-//
-//
-//        setTimeout(done,10000);
-//    })
-//
-//});
-//
-//describe('Run Processes',function(){
-//
-//    var fatusQueue = Fatusjs.instance;
-//
-//    it('should get a fatus instance',function(){
-//        "use strict";
-//        assert.equal(typeof fatusQueue,'object');
-//    })
-//
-//
-//    it('should insert the job and process it',function(done){
-//        "use strict";
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//
-//            setTimeout(function(){
-//                fatusQueue.getQueueSize(function onGet(err,res){
-//                    assert.equal(err,null);
-//                    assert.equal(res,0);
-//                    console.log('queue is correctly empty')
-//                });
-//            },12000);
-//
-//            setTimeout(done,15000);
-//
-//        })
-//
-//    })
-//
-//    it('should add another worker',function(done){
-//        "use strict";
-//        fatusQueue.addWorker();
-//
-//        setTimeout(done,10000);
-//    })
-//
-//});
-//
-//
-//describe('Load many process',function(){
-//
-//    var fatusQueue = Fatusjs.instance;
-//
-//    it('should get a fatus instance',function(){
-//        "use strict";
-//        assert.equal(typeof fatusQueue,'object');
-//    })
-//
-//
-//    it('should insert many job and not fail',function(done){
-//        "use strict";
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//        })
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//        })
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//        })
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//        })
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//        })
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//        })
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//        })
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//        })
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//        })
-//
-//        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
-//            assert.equal(err,null);
-//        })
-//
-//        setTimeout(done,15000);
-//
-//
-//    })
-//
-//});
+describe('Init',function(){
+
+    var fatusQueue = Fatusjs.instance;
+    var fatus2 = Fatusjs.instance;
+
+    it('should get a fatus instance',function(){
+        "use strict";
+        assert.equal(typeof fatusQueue,'object');
+    })
+
+    it('should be singleton',function(){
+        "use strict";
+        assert.deepEqual(fatusQueue,fatus2);
+    })
+
+    it('should clear the worker and return size 0',function(done){
+        "use strict";
+
+        fatusQueue.clear(function onClear(err,res){
+            assert.equal(err,null);
+
+            fatusQueue.getQueueSize(function onGet(err,res){
+                assert.equal(err,null);
+                assert.equal(res,0);
+            });
+        });
+
+        setTimeout(done,6000);
+
+    })
+
+    it('should add worker',function(done){
+        "use strict";
+        fatusQueue.addWorker();
+
+
+        setTimeout(done,10000);
+    })
+
+});
+
+describe('Run Processes',function(){
+
+    var fatusQueue = Fatusjs.instance;
+
+    it('should get a fatus instance',function(){
+        "use strict";
+        assert.equal(typeof fatusQueue,'object');
+    })
+
+
+    it('should insert the job and process it',function(done){
+        "use strict";
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+
+            setTimeout(function(){
+                fatusQueue.getQueueSize(function onGet(err,res){
+                    assert.equal(err,null);
+                    assert.equal(res,0);
+                    console.log('MOCHA: queue is correctly empty')
+                });
+            },12000);
+
+            setTimeout(done,15000);
+
+        })
+
+    })
+
+    it('should add another worker',function(done){
+        "use strict";
+        fatusQueue.addWorker();
+
+        setTimeout(done,10000);
+    })
+
+});
+
+
+describe('Load many process',function(){
+
+    var fatusQueue = Fatusjs.instance;
+
+    it('should get a fatus instance',function(){
+        "use strict";
+        assert.equal(typeof fatusQueue,'object');
+    })
+
+
+    it('should insert many job and not fail',function(done){
+        "use strict";
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        fatusQueue.insertInQueue(msgJson,function onComplete(err,res){
+            assert.equal(err,null);
+        })
+
+        setTimeout(done,15000);
+
+
+    })
+
+});
 
 
 describe('use multiStep job operations',function(){
@@ -245,8 +245,34 @@ describe('use multiStep job operations',function(){
         fatusQueue.insertInQueue(msgJob.getMsg(),function onComplete(err,res){
             assert.equal(err,null);
         })
+        fatusQueue.insertInQueue(msgJob.getMsg(),function onComplete(err,res){
+            assert.equal(err,null);
+        })
+        fatusQueue.insertInQueue(msgJob.getMsg(),function onComplete(err,res){
+            assert.equal(err,null);
+        })
+        fatusQueue.addWorker();
+        fatusQueue.addWorker();
+        fatusQueue.addWorker();
+
 
         setTimeout(done,150000);
+
+    });
+
+    it('the queue should be empty',function(done){
+        "use strict";
+
+        setTimeout(function(){
+            fatusQueue.getQueueSize(function onGet(err,res){
+                assert.equal(err,null);
+                assert.equal(res,0);
+                console.log('queue is correctly empty')
+                done();
+            });
+
+
+        })
 
     })
 })

@@ -126,7 +126,7 @@ class AzureQueue{
      */
     updateMessage(queueName,messageId,popReceipt,visibilityTimeout,msg,options,onUpdate){
         assert.equal(typeof queueName,'string','queueName must be an string');
-        assert.equal(typeof messageId,'string','messageId must be a function');
+        assert.equal(typeof messageId,'string','messageId must be a string');
         assert.equal(typeof popReceipt,'string','popReceipt must be a function');
         assert.equal(typeof msg,'object','msg must be a function');
         assert.equal(typeof onUpdate,'function','onUpdate must be a function');

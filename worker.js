@@ -17,6 +17,7 @@ const path = require('path');
 const assert = require('assert');
 const retry = require('retry');
 const async = require('async');
+const moment = require('moment');
 
 /** the worker for the fatus */
 class FatusWorker extends EventEmitter{
@@ -46,7 +47,7 @@ class FatusWorker extends EventEmitter{
         this.fatus.getQueueSize(
             function onSize(err,data){
                 if(data && data>0) {
-                    console.log(MODULE_NAME + '%s: queue is alive, open SingleRUN, by %s',th.name,th.EQ_RETRY_TIME);
+                    console.log(MODULE_NAME + '%s: queue not empty > execute',th.name,th.EQ_RETRY_TIME);
                     th.single();
                 }else if (err){
                     console.error(err);
@@ -71,33 +72,42 @@ class FatusWorker extends EventEmitter{
         let msgObj,jobObj;
         try {
             async.waterfall([
+
                     // get work from queue
                     function top(wfcallback) {
                         console.log(MODULE_NAME + '%s: fetch from queue ', th.name);
                         //th.fetchNewJob(th, wfcallback);
                         th.fetchNewJob(th,wfcallback);
                     },
-                    // execute instruction in message
-                    function msgExecute(msg, wfcallback) {
+
+                    // reserve the job
+                    function reserve(msg, wfcallback){
                         assert(typeof msg, 'object', 'msg from queue is null');
                         msgObj = msg[0];
-                        if(msgObj) {
+                        if(msgObj && msgObj.messageId) {
                             jobObj = new MessageJob(msgObj);
-                            console.log(MODULE_NAME + '%s: executing from queue ', th.name);
-                            jobObj.execute(th, wfcallback );
-                            //th.executeJob(msgObj, th, wfcallback);
-                        }else{
+                            jobObj.reserve(th, wfcallback);
+                        }else {
                             wfcallback(new Error('queue is empty'),null);
                         }
                     },
+
+                    // execute instruction in message
+                    function msgExecute(res, wfcallback) {
+                        console.log(MODULE_NAME + '%s: executing from queue ', th.name);
+                        jobObj.execute(th, wfcallback );
+                    },
+
                     // pop message if ok
                     function postExecute(res, wfcallback){
                         th.popMessageFT(msgObj,th,wfcallback);
                     }
+
                 ],
                 // update if error, else ok
                 function _onFinish(err,val){
                     if(err && typeof err == 'error' && msgObj && jobObj){
+                        jobObj.fails();
                         // async error, update message
                         th.updateMsgOnError(jobObj, msgObj, err, th);
                     }
@@ -110,6 +120,7 @@ class FatusWorker extends EventEmitter{
         }catch(err){
             // sync error, update message
             if(msgObj && jobObj) {
+                jobObj.fails();
                 th.updateMsgOnError(jobObj, msgObj, err, th);
             }s
         }
@@ -123,7 +134,7 @@ class FatusWorker extends EventEmitter{
      */
     updateMsgOnError(jobObj, msgObj, err, th) {
         jobObj.fails(err)
-        msgObj.messageText = jobObj.getMsg();
+        msgObj = jobObj.getCompleteMsg();
         th.updateMessageFT(msgObj, th, function onUpdate(err,res){
             if(err){
                 console.log(MODULE_NAME + '%s: FATAL cannot update message');
@@ -152,37 +163,6 @@ class FatusWorker extends EventEmitter{
         );
     }
 
-    ///**
-    // * run the job at low level - used for overriding
-    // * @param msg
-    // * @param th
-    // * @param callback
-    // */
-    //executeJob(msg, th, callback) {
-    //    th.execute(msg.messageText.module, msg.messageText.function, msg.messageText.payload, callback);
-    //}
-    //
-    ///**
-    // * execute the job at the lowest level
-    // * @param moduleName the module name to be executed (with path)
-    // * @param funct the function to be executed (the name of)
-    // * @param payload the payload to pass at the function invoked
-    // * @param onComplete callback
-    // */
-    //execute(moduleName,funct,payload,onComplete){
-    //    assert(typeof moduleName,'string','moduleName must be a string');
-    //    assert(typeof funct,'string','funct must be a string');
-    //    assert(typeof payload,'object','payload must be a string');
-    //    assert(typeof onComplete,'function','payload must be a string');
-    //    try{
-    //        let module = this.getModule(moduleName);
-    //        module[funct](payload,this,onComplete);
-    //    }catch(error){
-    //        // sync errors
-    //        // manage errors
-    //        console.error(error);
-    //    }
-    //}
 
     /**
      * get a new job from the queue
@@ -190,7 +170,15 @@ class FatusWorker extends EventEmitter{
      * @param wfcallback
      */
     fetchNewJob(th, wfcallback) {
-        th.fatus.getQueueTop(wfcallback);
+        let NOW = moment();
+        th.fatus.getQueueTop(function onGet(err,msg){
+            if(!err && msg && msg.messageText) {
+                if (msg.messageText.reserved && moment(msg.messageText.dtReserve).diff(NOW) < th.MAX_RESERVATION_TIME && msg.messageText.reserver!=this.name) {
+                    return th.fetchNewJob(th, wfcallback);
+                }
+            }
+            wfcallback(err,msg);
+        });
     }
 
     /**
@@ -268,6 +256,13 @@ class FatusWorker extends EventEmitter{
         this.STACK_PROTECTION_THRSD = maxIteration;
     }
 
+    /**
+     * set the reservation time
+     * @param reservationTime num
+     */
+    setReservationTime(reservationTime){
+        this.MAX_RESERVATION_TIME = reservationTime;
+    }
 
 }
 

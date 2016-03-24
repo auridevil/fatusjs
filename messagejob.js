@@ -12,6 +12,7 @@ const path = require('path');
 const assert = require('assert');
 const retry = require('retry');
 const async = require('async');
+const moment = require('moment');
 
 class MessageJob extends EventEmitter {
 
@@ -110,11 +111,15 @@ class MessageJob extends EventEmitter {
                 failArray: this.failArray
             }
         }
+        if(this.reserved && outMsg){
+            outMsg.reserved = this.reserved;
+            outMsg.dtReserve = this.dtReserve;
+        }
         return outMsg;
     }
 
     getCompleteMsg(){
-        var msg = this.originalMsg;
+        var msg = this.originalMsg || {};
         msg.messageText = this.getMsg();
         return msg;
     }
@@ -124,12 +129,18 @@ class MessageJob extends EventEmitter {
             this.executeSimple(worker,onComplete);
         }else if (this.isMulti){
             this.executeMulti(worker,onComplete);
+        }else{
+            // empty for some reason
+            console.log(MODULE_NAME + ': aborted empty operation');
+            onComplete(null,null);
         }
+
     }
 
     executeSimple(worker,onComplete) {
         try {
             let module = this.getModule(this.module);
+            console.log(MODULE_NAME + ': executing %s.%s', this.module, this.function);
             module[this.function](this.payload, worker, onComplete);
         } catch (error) {
             // sync errors
@@ -157,35 +168,48 @@ class MessageJob extends EventEmitter {
                         th.fails(err);
                         worker.updateMsg(th.getCompleteMsg(),onComplete);
                     }else{
-                        onComplete(null,null);
+                        console.log(MODULE_NAME + ': exiting step mode');
+                        onComplete(null,{success:true});
                     }
                 }
-
-            )
+            );
         }catch( error){
             console.error(error);
             onComplete(error,null);
         }
-
     }
 
     processStep(step,worker,callback){
         let th = this;
         try{
             async.waterfall([
-                function exe(wfcallback){
+
+                // reserve the object
+                function reserve(wfcallback){
+                    th.reserve(worker,wfcallback);
+                },
+
+                // execute
+                function exe(res,wfcallback){
                     let module = th.getModule(step.moduleName);
+                    console.log(MODULE_NAME + ': executing %s.%s', step.moduleName, step.function);
                     module[step.function](step.payload, worker, wfcallback);
                 },
+
+                // update and unlock
                 function update(paramObj,wfcallback){
                     th.popStep();
                     th.updateStepPayload(paramObj);
+                    th.reserved = false;
                     worker.updateMsg(th.getCompleteMsg(),wfcallback);
                 },
+
+                // complete step
                 function complete(res,wfcallback){
                     wfcallback();
                 }
             ],
+                // sum up
             function onComplete(err,res){
                 if(err){
                     th.fails(err);
@@ -200,14 +224,38 @@ class MessageJob extends EventEmitter {
         }
     }
 
+    /**
+     * trace a fail
+     * @param err
+     */
     fails(err){
         this.fail = this.fail +1;
+        this.reserved = false;
         try {
             this.failArray.push(util.inspect(err));
         }catch(inspecterr){
             console.error(inspecterr);
         }
     }
+
+    /**
+     * reserve the message
+     * @param worker
+     * @param onDone
+     */
+    reserve(worker,onDone){
+        this.reserved = true;
+        this.dtReserve = new Date();
+        this.reserver = worker.name;
+        var msg = this.getCompleteMsg();
+        if(!msg || !msg.messageId){
+            console.log(MODULE_NAME + ': CANNOT RESERVE EMPTY OBJECT ' + util.inspect(msg));
+            onDone(null,null);
+        }else {
+            worker.updateMsg(this.getCompleteMsg(), onDone);
+        }
+    }
+
 
 
     /**
