@@ -57,6 +57,7 @@ class FatusWorker extends EventEmitter{
                         setTimeout(function(){ th.run(attempt) }, th.EQ_RETRY_TIME)
                     }else{
                         console.log(MODULE_NAME + '%s: queue is empty, KILLING WORKER',th.name);
+                        th.fatus.removeWorker(th.name);
                     }
                 }
             }

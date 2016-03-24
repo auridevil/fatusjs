@@ -256,7 +256,7 @@ describe('use multiStep job operations',function(){
         fatusQueue.addWorker();
 
 
-        setTimeout(done,150000);
+        setTimeout(done,100000);
 
     });
 

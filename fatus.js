@@ -4,7 +4,7 @@
 /** constants */
 const MODULE_NAME = 'Fatusjs'
 const FATUS_QUEUE_NAME = process.env.FATUS_QUEUE_NAME || 'fatusjs-queue';
-const FATUS_MAX_WORKER = process.env.FATUS_MAX_WORKER || 2;
+const FATUS_MAX_WORKER = process.env.FATUS_MAX_WORKER || 20;
 const FATUS_EQ_RETRY_TIME = process.env.FATUS_EQ_RETRY_TIME || 4000; // millisec
 const FATUS_WRK_RETRY_ATTEMP = process.env.FATUS_WRK_RETRY_ATTEMP || 2;
 const FATUS_WRK_STACK_TRSHLD = process.env.FATUS_WRK_STACK_TRSHLD || 10;
@@ -80,6 +80,23 @@ class Fatusjs extends EventEmitter{
             worker.setReservationTime(FATUS_JOB_RESERV_TIME);
             this.workerPool.push(worker);
             worker.run();
+        }else{
+            console.log(MODULE_NAME + ': workerpool full, skip adding');
+        }
+    }
+
+    /**
+     * remove a worker
+     * @param name
+     */
+    removeWorker(name){
+        var indx = 0;
+        for(let w of this.workerPool){
+            if(w.name === name){
+                this.workerPool.splice(indx,1);
+                return;
+            }
+            indx ++;
         }
     }
 
