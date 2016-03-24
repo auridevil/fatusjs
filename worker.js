@@ -225,7 +225,7 @@ class FatusWorker extends EventEmitter{
             function (currentAttempt){
                 fatus.updateMsg(msg,function(err,res){
                     if (ftOperation.retry(err)){
-                        console.log(MODULE_NAME + '%s: err on updateMessage');
+                        //console.log(MODULE_NAME + '%s: err on updateMessage for msg %s ',th.name,msg.messageId);
                         return;
                     }
                     callback(err ? ftOperation.mainError() : null, res);
