@@ -4,7 +4,7 @@
 'use strict';
 
 
-const DEFUALT_VISIBILITY_TIMEOUT = 480;
+const DEFUALT_VISIBILITY_TIMEOUT = 2;
 const azureQueue = require('azure-queue-node');
 const underscore = require('underscore');
 const async = require('async');
@@ -130,7 +130,7 @@ class AzureQueue{
         assert.equal(typeof popReceipt,'string','popReceipt must be a function');
         assert.equal(typeof msg,'object','msg must be a function');
         assert.equal(typeof onUpdate,'function','onUpdate must be a function');
-        this.queueClient.updateMessage(queueName,messageId,popReceipt,visibilityTimeout||60,msg,options,onUpdate);
+        this.queueClient.updateMessage(queueName,messageId,popReceipt,visibilityTimeout||DEFUALT_VISIBILITY_TIMEOUT,msg,options,onUpdate);
     }
 
     /**

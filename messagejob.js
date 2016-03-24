@@ -5,6 +5,7 @@
 "use strict";
 
 const MODULE_NAME = 'MessageJob';
+const OVER_REPETITION_THRSH = 10;
 const EventEmitter = require('events');
 const util = require('util');
 const path = require('path');
@@ -18,8 +19,10 @@ class MessageJob extends EventEmitter {
         super();
         if (msg && msg.messageText && msg.messageText.isSimple) {
             this.setSimpleJob(msg.messageText.module, msg.messageText.function, msg.messageText.payload, msg.messageText.fail, msg.messageText.failArray);
+            this.originalMsg = msg;
         } else if (msg && msg.messageText && msg.messageText.isMulti) {
             this.setMultiJobFromMsg(msg.messageText);
+            this.originalMsg = msg;
         } else {
             // NOTHING TO DO, NEW OBJECT
         }
@@ -52,8 +55,7 @@ class MessageJob extends EventEmitter {
     addStep(module, functionName, paramObj){
         assert.equal(typeof module, 'string', 'module must be a string');
         assert.equal(typeof functionName, 'string', 'function must be a string');
-        assert.equal(typeof paramObj, 'object', 'paramObj must be a string');
-        assert.equal(this.isSimple, false, 'already a simple object');
+        assert.ok(!this.isSimple, 'already a simple object');
         var step = {
             moduleName: module,
             function: functionName,
@@ -62,6 +64,21 @@ class MessageJob extends EventEmitter {
         }
         this.stepNext.push(step);
         return this;
+    }
+
+    popStep(){
+        assert.ok(!this.isSimple,'the job is a simple obj');
+        assert.equal(this.stepNext.length>0,true,'the are no current step');
+        var step = this.stepNext[0];
+        this.stepNext.splice(0,1); // remove the 0 indexed item
+        this.stepDone.push(step);
+    }
+
+    updateStepPayload(payload){
+        assert.ok(!this.isSimple,'the job is a simple obj');
+        if(this.stepNext.length>0) {
+            this.stepNext[0].payload = payload;
+        }
     }
 
     setMultiJobFromMsg(msgText){
@@ -81,31 +98,39 @@ class MessageJob extends EventEmitter {
                 function: this.function,
                 fail: this.fail,
                 isSimple: this.isSimple,
-                payload: this.payload
+                payload: this.payload,
+                failArray: this.failArray
             }
         }else if(this.isMulti){
             outMsg = {
-                isMulti:this.isMulti,
-                fail:this.fail,
-                stepDone:this.stepDone,
-                stepNext:this.stepNext
+                isMulti: this.isMulti,
+                fail: this.fail,
+                stepDone: this.stepDone,
+                stepNext: this.stepNext,
+                failArray: this.failArray
             }
         }
         return outMsg;
+    }
+
+    getCompleteMsg(){
+        var msg = this.originalMsg;
+        msg.messageText = this.getMsg();
+        return msg;
     }
 
     execute(worker,onComplete){
         if(this.isSimple) {
             this.executeSimple(worker,onComplete);
         }else if (this.isMulti){
-            //this.executeMulti(onComplete);
+            this.executeMulti(worker,onComplete);
         }
     }
 
     executeSimple(worker,onComplete) {
         try {
             let module = this.getModule(this.module);
-            module[this.function](this.payload, this, onComplete);
+            module[this.function](this.payload, worker, onComplete);
         } catch (error) {
             // sync errors
             console.error(error);
@@ -113,7 +138,69 @@ class MessageJob extends EventEmitter {
         }
     }
 
-    fail(err){
+    executeMulti(worker,onComplete) {
+        let th = this;
+        try{
+            async.whilst(
+                function isMoreToProcess(){
+                    var cond1 = th.stepNext.length>0;  // there is a element to execute
+                    var cond2 = !(th.stepNext.suspended); // the step is not suspended
+                    return cond1 && cond2;
+                },
+                function process(callback){
+                    th.steplevel = th.steplevel + 1;
+                    let step = th.stepNext[0];
+                    th.processStep(step,worker,callback);
+                },
+                function onFinish(err,res){
+                    if(err){
+                        th.fails(err);
+                        worker.updateMsg(th.getCompleteMsg(),onComplete);
+                    }else{
+                        onComplete(null,null);
+                    }
+                }
+
+            )
+        }catch( error){
+            console.error(error);
+            onComplete(error,null);
+        }
+
+    }
+
+    processStep(step,worker,callback){
+        let th = this;
+        try{
+            async.waterfall([
+                function exe(wfcallback){
+                    let module = th.getModule(step.moduleName);
+                    module[step.function](step.payload, worker, wfcallback);
+                },
+                function update(paramObj,wfcallback){
+                    th.popStep();
+                    th.updateStepPayload(paramObj);
+                    worker.updateMsg(th.getCompleteMsg(),wfcallback);
+                },
+                function complete(res,wfcallback){
+                    wfcallback();
+                }
+            ],
+            function onComplete(err,res){
+                if(err){
+                    th.fails(err);
+                    worker.updateMsg(th.getCompleteMsg(),callback);
+                }else{
+                    callback(null,res);
+                }
+            })
+        }catch(err){
+            th.fails(err);
+            worker.updateMsg(th.getCompleteMsg(),callback);
+        }
+    }
+
+    fails(err){
         this.fail = this.fail +1;
         try {
             this.failArray.push(util.inspect(err));

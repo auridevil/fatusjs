@@ -9,8 +9,6 @@
 'use strict';
 
 const MODULE_NAME = 'FatusWorker';
-const EMPTY_QUEUE_RETRY_TIME = 4000; // millisec
-const MAX_WORKER_ATTEMPT = 2;
 const MessageJob = require('./messagejob');
 const shortid = require('shortid');
 const EventEmitter = require('events');
@@ -32,6 +30,7 @@ class FatusWorker extends EventEmitter{
         assert(typeof fatusQueue,'object','Missing fatusQueue in the fatus worker constructor');
         this.name = shortid.generate();
         this.fatus = fatusQueue;
+        this.iteration = 0;
         console.log(MODULE_NAME + '%s: just created', this.name);
         this.emit('load',this.name);
     }
@@ -47,14 +46,14 @@ class FatusWorker extends EventEmitter{
         this.fatus.getQueueSize(
             function onSize(err,data){
                 if(data && data>0) {
-                    console.log(MODULE_NAME + '%s: queue is alive, open SingleRUN, by %s',th.name,EMPTY_QUEUE_RETRY_TIME);
+                    console.log(MODULE_NAME + '%s: queue is alive, open SingleRUN, by %s',th.name,th.EQ_RETRY_TIME);
                     th.single();
                 }else if (err){
                     console.error(err);
                 }else{
-                    if(attempt<MAX_WORKER_ATTEMPT) {
-                        console.log(MODULE_NAME + '%s: queue is empty, retry in %s',th.name,EMPTY_QUEUE_RETRY_TIME);
-                        setTimeout(function(){ th.run(attempt) },EMPTY_QUEUE_RETRY_TIME)
+                    if(attempt< th.MAX_WORKER_ATTEMPT) {
+                        console.log(MODULE_NAME + '%s: queue is empty, retry in %s',th.name,th.EQ_RETRY_TIME);
+                        setTimeout(function(){ th.run(attempt) }, th.EQ_RETRY_TIME)
                     }else{
                         console.log(MODULE_NAME + '%s: queue is empty, KILLING WORKER',th.name);
                     }
@@ -68,6 +67,7 @@ class FatusWorker extends EventEmitter{
      */
     single(){
         let th = this;
+        this.iteration = this.iteration+1;
         let msgObj,jobObj;
         try {
             async.waterfall([
@@ -102,7 +102,10 @@ class FatusWorker extends EventEmitter{
                         th.updateMsgOnError(jobObj, msgObj, err, th);
                     }
                     th.emit('runcomplete');
-                    th.run();
+                    // repeat only if stack is not full
+                    if(th.iteration<th.STACK_PROTECTION_THRSD){
+                        th.run();
+                    }
                 });
         }catch(err){
             // sync error, update message
@@ -119,7 +122,7 @@ class FatusWorker extends EventEmitter{
      * @param th the reference to the worker (pointer)
      */
     updateMsgOnError(jobObj, msgObj, err, th) {
-        jobObj.fail(err)
+        jobObj.fails(err)
         msgObj.messageText = jobObj.getMsg();
         th.updateMessageFT(msgObj, th, function onUpdate(err,res){
             if(err){
@@ -129,6 +132,24 @@ class FatusWorker extends EventEmitter{
                 console.log(MODULE_NAME + '%s: update OK');
             }
         });
+    }
+
+    /**
+     * update a single message
+     * @param msgObj
+     * @param onUpdate
+     */
+    updateMsg(msgObj, onUpdate){
+        this.updateMessageFT(
+            msgObj,
+            this,
+            function onDone(err,val){
+                if(!err && val.popReceipt){
+                    msgObj.popReceipt = val.popReceipt;
+                }
+                onUpdate(err,val);
+            }
+        );
     }
 
     ///**
@@ -210,15 +231,41 @@ class FatusWorker extends EventEmitter{
             minTimeout: 1 * 1000,           // minimum timeout allowed
             maxTimeout: 1 * 1000            // maximum timeout allowed
         });
+        var fatus = th.fatus;
         ftOperation.attempt(
             function (currentAttempt){
-                th.fatus.updateMessage(msg,function(err,res){
-                    if (operation.retry(err)){
+                fatus.updateMsg(msg,function(err,res){
+                    if (ftOperation.retry(err)){
+                        console.log(MODULE_NAME + '%s: err on updateMessage');
                         return;
                     }
-                    callback(err ? operation.mainError() : null, res);
+                    callback(err ? ftOperation.mainError() : null, res);
                 })
             });
+    }
+
+    /**
+     * set the retry time to use in case of an empty queue
+     * @param time numeric in millisec
+     */
+    setRetryTime(time){
+        this.EQ_RETRY_TIME = time;
+    }
+
+    /**
+     * set the max number attempts
+     * @param num numeric value
+     */
+    setMaxAttempts(num){
+        this.MAX_WORKER_ATTEMPT = num;
+    }
+
+    /**
+     * set the stack protection threshold
+     * @param maxIteration
+     */
+    setStackProtection(maxIteration){
+        this.STACK_PROTECTION_THRSD = maxIteration;
     }
 
 
