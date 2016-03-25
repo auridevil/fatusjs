@@ -13,6 +13,7 @@ const FATUS_JOB_RESERV_TIME = process.env.FATUS_JOB_RESERV_TIME || 60; // sec
 /** inner refs */
 const AzureQueue = require('./azurequeue');
 const FatusWorker = require('./worker');
+const FatusPriorityWorker = require('./priorityworker')
 const MessageJob = require('./messagejob');
 
 /** outher refs */
@@ -54,6 +55,7 @@ class Fatusjs extends EventEmitter{
 
         console.log(MODULE_NAME + ': init worker pool with max %s ',FATUS_MAX_WORKER);
         this.workerPool = [];
+        this.registerMonitor();
 
     }
 
@@ -74,7 +76,7 @@ class Fatusjs extends EventEmitter{
      */
     addWorker(){
         if(this.workerPool.length<FATUS_MAX_WORKER){
-            var worker = new FatusWorker(this);
+            let worker = new FatusWorker(this);
             worker.setRetryTime(FATUS_EQ_RETRY_TIME);
             worker.setMaxAttempts(FATUS_WRK_RETRY_ATTEMP);
             worker.setStackProtection(FATUS_WRK_STACK_TRSHLD);
@@ -84,6 +86,18 @@ class Fatusjs extends EventEmitter{
         }else{
             console.log(MODULE_NAME + ': workerpool full, skip adding');
         }
+    }
+
+    /**
+     * add a worker to the pool
+     */
+    addPriorityWorker(){
+        let worker = new FatusPriorityWorker(this);
+        worker.setRetryTime(FATUS_EQ_RETRY_TIME);
+        worker.setMaxAttempts(FATUS_WRK_RETRY_ATTEMP);
+        worker.setStackProtection(FATUS_WRK_STACK_TRSHLD);
+        worker.setReservationTime(FATUS_JOB_RESERV_TIME);
+        worker.run();
     }
 
     /**
@@ -194,6 +208,41 @@ class Fatusjs extends EventEmitter{
      */
     createMessageJob(){
         return new MessageJob();
+    }
+
+
+    /**
+     * staticaly add a new priority worker if the queue is not empty
+     */
+    static monitor(){
+        let fatus = Fatusjs.instance;
+        fatus.getQueueSize(function onGet(err,count){
+            if(count && count >0){
+                fatus.addPriorityWorker();
+            }
+        });
+    }
+
+    /**
+     * register a scheduled monitoring worker
+     */
+    registerMonitor(){
+        var functionPtr = Fatusjs.monitor;
+        this.monitorInterval = setInterval(
+            functionPtr,
+            20000
+        );
+
+    }
+
+    /**
+     * remove monitoring worker, if any
+     */
+    unregisterMonitor(){
+        if(this.monitorInterval){
+            clearInterval(this.monitorInterval);
+            this.monitorInterval = false;
+        }
     }
 
 }

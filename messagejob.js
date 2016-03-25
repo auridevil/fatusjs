@@ -239,13 +239,25 @@ class MessageJob extends EventEmitter {
      * trace a fail
      * @param err
      */
-    fails(err){
+    fails(err,step){
         this.fail = this.fail +1;
         this.reserved = false;
         try {
             this.failArray.push(util.inspect(err));
         }catch(inspecterr){
             console.error(inspecterr);
+        }
+
+        if(step){
+            step.fail = step.fail+1;
+            if(step.payload && step.payload.postFailFunction && (typeof step.payload.postFailFunction == 'function' )){
+                try {
+                    step.payload = payload.postFailFunction(payload,step,err);
+                }catch(err){
+                    console.error(err);
+                }
+
+            }
         }
     }
 

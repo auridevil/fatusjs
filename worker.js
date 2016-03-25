@@ -123,7 +123,7 @@ class FatusWorker extends EventEmitter{
             if(msgObj && jobObj) {
                 jobObj.fails();
                 th.updateMsgOnError(jobObj, msgObj, err, th);
-            }s
+            }
         }
     }
 
@@ -267,5 +267,6 @@ class FatusWorker extends EventEmitter{
 
 }
 
+/** Exports */
 module.exports = FatusWorker;
 
