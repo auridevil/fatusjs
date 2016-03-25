@@ -78,6 +78,13 @@ class MessageJob extends EventEmitter {
     updateStepPayload(payload){
         assert.ok(!this.isSimple,'the job is a simple obj');
         if(this.stepNext.length>0) {
+            if(payload.postRunFunction && (typeof payload.postRunFunction == 'function')){
+                try {
+                    payload = payload.postRunFunction(payload);
+                }catch(err){
+                    console.error(err);
+                }
+            }
             this.stepNext[0].payload = payload;
         }
     }
@@ -193,7 +200,11 @@ class MessageJob extends EventEmitter {
                 function exe(res,wfcallback){
                     let module = th.getModule(step.moduleName);
                     console.log(MODULE_NAME + ': executing %s.%s', step.moduleName, step.function);
-                    module[step.function](step.payload, worker, wfcallback);
+                    if(step.payload.skipWorker) {
+                        module[step.function](step.payload, wfcallback);
+                    }else{
+                        module[step.function](step.payload, worker, wfcallback);
+                    }
                 },
 
                 // update and unlock
