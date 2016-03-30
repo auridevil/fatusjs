@@ -11,6 +11,7 @@ const FATUS_WRK_RETRY_ATTEMP = process.env.FATUS_WRK_RETRY_ATTEMP || 2;
 const FATUS_WRK_STACK_TRSHLD = process.env.FATUS_WRK_STACK_TRSHLD || 10;
 const FATUS_JOB_RESERV_TIME = process.env.FATUS_JOB_RESERV_TIME || 60; // sec
 const FATUS_MAX_FAIL = process.env.FATUS_MAX_FAIL || 10; // max num of fails
+const FATUS_MAX_FAIL_TOTAL = process.env.FATUS_MAX_FAIL_TOTAL || 1000; // total number of fails before be suspended
 
 /** inner refs */
 const AzureQueue = require('./azurequeue');
@@ -126,6 +127,7 @@ class Fatusjs extends EventEmitter{
         if(this.failWorkerPool.length<5) {
             let worker = new FatusFailWorker(this);
             this.initWorker(worker);
+            worker.setMaxFails(FATUS_MAX_FAIL_TOTAL);
             this.failWorkerPool.push(worker);
             worker.run();
         }

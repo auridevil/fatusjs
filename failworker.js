@@ -19,85 +19,29 @@ const async = require('async');
 /** the worker for the fatus */
 class FatusFailWorker extends FatusWorker {
 
-
     /**
-     * execute a single peek-execute-pop cycle
+     * set the maximum number of failure that a failed job allow
+     * @param maxFail
      */
-    single(){
-        let th = this;
-        this.iteration = this.iteration+1;
-        let msgObj,jobObj;
-        try {
-            async.waterfall([
-
-                    // get work from queue
-                    function top(wfcallback) {
-                        console.log(MODULE_NAME + '%s: fetch from queue ', th.name);
-                        //th.fetchNewJob(th, wfcallback);
-                        th.fetchIteration = 0;
-                        th.fetchNewJob(th,wfcallback);
-                    },
-
-                    // reserve the job
-                    function reserve(msg, wfcallback){
-                        if(msg && msg[0] && msg[0].messageId){
-                            msgObj = msg[0];
-                            console.log( MODULE_NAME + '%s: msg found, reserving %s',th.name,msgObj.messageId);
-                            jobObj = new MessageJob(msgObj);
-                            jobObj.reserve(th, wfcallback);
-                            th.processing = jobObj;
-                            th.processingId = msgObj.messageId;
-                        }else {
-                            console.log( MODULE_NAME + '%s: all queue elements are not processable -retry later- %s',th.name,util.inspect(msgObj));
-                            wfcallback(new Error('queue is empty'),null);
-                        }
-                    },
-
-                    // execute instruction in message
-                    function msgExecute(res, wfcallback) {
-                        console.log(MODULE_NAME + '%s: executing from queue ', th.name);
-                        jobObj.execute(th, wfcallback );
-                    },
-
-                    // pop message if ok
-                    function postExecute(res, wfcallback){
-                        th.popMessageFT(msgObj,th,wfcallback);
-
-                    }
-
-                ],
-                // update if error, else ok
-                function _onFinish(err,val){
-                    if(err && typeof err == 'object' && msgObj && jobObj){
-                        jobObj.fails(err);
-                        // async error, update message
-                        th.updateMsgOnError(jobObj, msgObj, err, th);
-                        console.log(MODULE_NAME + '%s: FAILED JOB  %s', th.name, util.inspect(jobObj.getCompleteMsg()));
-                    }else if (err){
-                        //console.log('NOT PROPERLY FAILED JOB : %s', util.inspect(msgObj));
-                    }else{
-                        //console.log(MODULE_NAME)
-                    }
-                    th.processing = null;
-                    th.processingId = null;
-                    th.emit('runcomplete');
-                    // repeat only if stack is not full
-                    if(th.iteration<th.STACK_PROTECTION_THRSD && th.fetchIteration<(th.STACK_PROTECTION_THRSD*2)){
-                        th.run();
-                    }else{
-                        console.log(MODULE_NAME + '%s: stack protection threshold, KILLING WORKER',th.name);
-                        th.fatus.removeWorker(th.name);
-                    }
-                });
-        }catch(err){
-            // sync error, update message
-            if(msgObj && jobObj) {
-                jobObj.fails(err);
-                th.updateMsgOnError(jobObj, msgObj, err, th);
-            }
-        }
+    setMaxFails(maxFail){
+        this.MAX_FAIL_ALLOWED = maxFail;
     }
 
+    /**
+     * overridable execute method
+     * @param th
+     * @param jobObj
+     * @param wfcallback
+     */
+    execute(th, jobObj, cb) {
+        console.log(MODULE_NAME + '%s: executing from fail queue ', th.name);
+        if(jobObj.fail>th.MAX_FAIL_ALLOWED){
+            console.error(MODULE_NAME + '%s: job %s SUSPENDED for too many fails',th.name,jobObj.getId());
+            cb(new Error('job suspended',null));
+        }else {
+            jobObj.execute(th, cb);
+        }
+    }
 
     /**
      * get the fail queue size

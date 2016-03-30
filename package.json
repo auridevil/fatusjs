@@ -1,6 +1,6 @@
 {
   "name": "fatusjs",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Job Queue Manager based on Azure",
   "main": "fatus.js",
   "scripts": {

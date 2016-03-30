@@ -131,6 +131,11 @@ class MessageJob extends EventEmitter {
         return msg;
     }
 
+    getId(){
+        var msg = this.originalMsg || {};
+        return msg.messageId;
+    }
+
     execute(worker,onComplete){
         if(this.isSimple) {
             this.executeSimple(worker,onComplete);

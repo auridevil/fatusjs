@@ -102,8 +102,7 @@ class FatusWorker extends EventEmitter{
 
                     // execute instruction in message
                     function msgExecute(res, wfcallback) {
-                        console.log(MODULE_NAME + '%s: executing from queue ', th.name);
-                        jobObj.execute(th, wfcallback );
+                        th.execute(th, jobObj, wfcallback);
                     },
 
                     // pop message if ok
@@ -143,6 +142,17 @@ class FatusWorker extends EventEmitter{
                 th.updateMsgOnError(jobObj, msgObj, err, th);
             }
         }
+    }
+
+    /**
+     * overridable execute method
+     * @param th
+     * @param jobObj
+     * @param wfcallback
+     */
+    execute(th, jobObj, wfcallback) {
+        console.log(MODULE_NAME + '%s: executing from queue ', th.name);
+        jobObj.execute(th, wfcallback);
     }
 
     /**
@@ -312,6 +322,7 @@ class FatusWorker extends EventEmitter{
     setMaxFails(maxFail){
         this.MAX_FAIL_ALLOWED = maxFail;
     }
+
 
 }
 
