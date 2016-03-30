@@ -9,6 +9,7 @@
 'use strict';
 const MODULE_NAME = 'FatusPriorityWorker';
 const FatusWorker = require('./worker');
+const moment = require('moment');
 
 /** the worker for the fatus */
 class FatusPriorityWorker extends FatusWorker {
@@ -21,14 +22,24 @@ class FatusPriorityWorker extends FatusWorker {
      */
     fetchNewJob(th, wfcallback) {
         let NOW = moment();
-        th.fatus.getQueueTop(function onGet(err,msg){
-            if(!err && msg && msg.messageText) {
-                if (msg.messageText.reserved && moment(msg.messageText.dtReserve).diff(NOW) < th.MAX_RESERVATION_TIME && msg.messageText.reserver!=this.name && (!msg.messageText.fail)) {
-                    return th.fetchNewJob(th, wfcallback);
+        th.fetchIteration = th.fetchIteration +1;
+        if(th.fetchIteration<(th.STACK_PROTECTION_THRSD*2)) {
+            th.fatus.getQueueTop(function onGet(err, msg) {
+                if (!err && msg && msg[0] && msg[0].messageText) {
+                    let reservedCondition = msg[0].messageText.reserved && moment(msg[0].messageText.dtReserve).diff(NOW) < th.MAX_RESERVATION_TIME && msg[0].messageText.reserver != th.name;
+                    let notfailedCondition = msg[0].messageText.fail;
+                    if (reservedCondition || notfailedCondition){
+                        return th.fetchNewJob(th, wfcallback);
+                    }else{
+                        wfcallback(err, msg);
+                    }
+                }else{
+                    wfcallback(err, null);
                 }
-            }
-            wfcallback(err,msg);
-        });
+            });
+        }else{
+            wfcallback(null,null);
+        }
     }
 }
 

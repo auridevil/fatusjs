@@ -34,7 +34,13 @@ function subsInvoke(payload,worker,onComplete){
 
 }
 
+function invokeAndFail(payload,worker,onComplete){
+    "use strict";
+    onComplete(new Error('BECAUSE LIFE SUCKS'),null);
+}
+
 
 
 exports.subsInvoke = subsInvoke;
 exports.invoke = invoke;
+exports.invokeAndFail = invokeAndFail;

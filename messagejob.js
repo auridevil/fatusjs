@@ -199,7 +199,7 @@ class MessageJob extends EventEmitter {
                 // execute
                 function exe(res,wfcallback){
                     let module = th.getModule(step.moduleName);
-                    console.log(MODULE_NAME + ': executing %s.%s', step.moduleName, step.function);
+                    console.log(MODULE_NAME + ': executing %s.%s -  %s', step.moduleName, step.function,th.originalMsg ? th.originalMsg.messageId:'ND');
                     if(step.payload.skipWorker) {
                         module[step.function](step.payload, wfcallback);
                     }else{
@@ -240,6 +240,7 @@ class MessageJob extends EventEmitter {
      * @param err
      */
     fails(err,step){
+        assert.equal(typeof err,'object','Error is null');
         this.fail = this.fail +1;
         this.reserved = false;
         try {
@@ -276,6 +277,24 @@ class MessageJob extends EventEmitter {
             onDone(null,null);
         }else {
             worker.updateMsg(this.getCompleteMsg(), onDone);
+        }
+    }
+
+    /**
+     * unreserve object
+     * @param save
+     * @param onDone
+     */
+    unreserve(save,onDone){
+        this.reserved = false;
+        if(save){
+            var msg = this.getCompleteMsg();
+            if(!msg || !msg.messageId){
+                console.log(MODULE_NAME + ': CANNOT UNRESERVE EMPTY OBJECT ' + util.inspect(msg));
+                onDone(null,null);
+            }else {
+                worker.updateMsg(this.getCompleteMsg(), onDone);
+            }
         }
     }
 

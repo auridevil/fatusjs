@@ -13,6 +13,7 @@
     "async": "^1.5.2",
     "azure-queue-node": "^1.1.0",
     "moment": "^2.12.0",
+    "node-json2html": "^1.0.0",
     "retry": "^0.9.0",
     "shortid": "^2.2.4",
     "underscore": "^1.8.3",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "colors": "^1.1.2",
+    "express": "^4.13.4",
     "mocha": "^2.4.5"
   }
 }

@@ -31,7 +31,9 @@ class FatusWorker extends EventEmitter{
         assert(typeof fatusQueue,'object','Missing fatusQueue in the fatus worker constructor');
         this.name = shortid.generate();
         this.fatus = fatusQueue;
+        this.creation = new Date();
         this.iteration = 0;
+        this.fetchIteration = 0;
         console.log(MODULE_NAME + '%s: just created', this.name);
         this.emit('load',this.name);
     }
@@ -44,10 +46,11 @@ class FatusWorker extends EventEmitter{
         attempt = (attempt ? attempt : 0) +1;
         var th = this;
         console.log(MODULE_NAME + '%s: running worker run()',this.name);
-        this.fatus.getQueueSize(
+        this.getQueueSize(
+            this.fatus,
             function onSize(err,data){
                 if(data && data>0) {
-                    console.log(MODULE_NAME + '%s: queue not empty > execute',th.name,th.EQ_RETRY_TIME);
+                    //console.log(MODULE_NAME + '%s: queue not empty > execute',th.name,th.EQ_RETRY_TIME);
                     th.single();
                 }else if (err){
                     console.error(err);
@@ -78,17 +81,21 @@ class FatusWorker extends EventEmitter{
                     function top(wfcallback) {
                         console.log(MODULE_NAME + '%s: fetch from queue ', th.name);
                         //th.fetchNewJob(th, wfcallback);
+                        th.fetchIteration = 0;
                         th.fetchNewJob(th,wfcallback);
                     },
 
                     // reserve the job
                     function reserve(msg, wfcallback){
-                        assert(typeof msg, 'object', 'msg from queue is null');
-                        msgObj = msg[0];
-                        if(msgObj && msgObj.messageId) {
+                        if(msg && msg[0] && msg[0].messageId){
+                            msgObj = msg[0];
+                            console.log( MODULE_NAME + '%s: msg found, reserving %s',th.name,msgObj.messageId);
                             jobObj = new MessageJob(msgObj);
                             jobObj.reserve(th, wfcallback);
+                            th.processing = jobObj;
+                            th.processingId = msgObj.messageId;
                         }else {
+                            console.log( MODULE_NAME + '%s: all queue elements are not processable -retry later- %s',th.name,util.inspect(msgObj));
                             wfcallback(new Error('queue is empty'),null);
                         }
                     },
@@ -102,26 +109,37 @@ class FatusWorker extends EventEmitter{
                     // pop message if ok
                     function postExecute(res, wfcallback){
                         th.popMessageFT(msgObj,th,wfcallback);
+
                     }
 
                 ],
                 // update if error, else ok
                 function _onFinish(err,val){
-                    if(err && typeof err == 'error' && msgObj && jobObj){
-                        jobObj.fails();
+                    if(err && typeof err == 'object' && msgObj && jobObj){
+                        jobObj.fails(err);
                         // async error, update message
                         th.updateMsgOnError(jobObj, msgObj, err, th);
+                        console.log(MODULE_NAME + '%s: FAILED JOB  %s', th.name, util.inspect(jobObj.getCompleteMsg()));
+                    }else if (err){
+                        //console.log('NOT PROPERLY FAILED JOB : %s', util.inspect(msgObj));
+                    }else{
+                        //console.log(MODULE_NAME)
                     }
+                    th.processing = null;
+                    th.processingId = null;
                     th.emit('runcomplete');
                     // repeat only if stack is not full
-                    if(th.iteration<th.STACK_PROTECTION_THRSD){
+                    if(th.iteration<th.STACK_PROTECTION_THRSD && th.fetchIteration<(th.STACK_PROTECTION_THRSD*2)){
                         th.run();
+                    }else{
+                        console.log(MODULE_NAME + '%s: stack protection threshold, KILLING WORKER',th.name);
+                        th.fatus.removeWorker(th.name);
                     }
                 });
         }catch(err){
             // sync error, update message
             if(msgObj && jobObj) {
-                jobObj.fails();
+                jobObj.fails(err);
                 th.updateMsgOnError(jobObj, msgObj, err, th);
             }
         }
@@ -141,7 +159,10 @@ class FatusWorker extends EventEmitter{
                 console.log(MODULE_NAME + '%s: FATAL cannot update message');
                 console.error(err);
             }else{
-                console.log(MODULE_NAME + '%s: update OK');
+                if(res && res.popReceipt){
+                    msgObj.popReceipt = res.popReceipt;
+                }
+                console.log(MODULE_NAME + '%s: update OK',th.name);
             }
         });
     }
@@ -156,12 +177,21 @@ class FatusWorker extends EventEmitter{
             msgObj,
             this,
             function onDone(err,val){
-                if(!err && val.popReceipt){
+                if(!err && val && val.popReceipt){
                     msgObj.popReceipt = val.popReceipt;
                 }
                 onUpdate(err,val);
             }
         );
+    }
+
+    /**
+     * get the queue size
+     * @param fatus
+     * @param onGet
+     */
+    getQueueSize(fatus,onGet){
+        fatus.getQueueSize(onGet);
     }
 
 
@@ -171,15 +201,24 @@ class FatusWorker extends EventEmitter{
      * @param wfcallback
      */
     fetchNewJob(th, wfcallback) {
-        let NOW = moment();
-        th.fatus.getQueueTop(function onGet(err,msg){
-            if(!err && msg && msg.messageText) {
-                if (msg.messageText.reserved && moment(msg.messageText.dtReserve).diff(NOW) < th.MAX_RESERVATION_TIME && msg.messageText.reserver!=this.name) {
-                    return th.fetchNewJob(th, wfcallback);
+        th.fetchIteration = th.fetchIteration +1;
+        if(th.fetchIteration<(th.STACK_PROTECTION_THRSD*2)) {
+            let NOW = moment();
+            th.fatus.getQueueTop(function onGet(err, msg) {
+                if (!err && msg && msg[0] && msg[0].messageText) {
+                    let reservedCondition = msg[0].messageText.reserved && moment(msg[0].messageText.dtReserve).diff(NOW) < th.MAX_RESERVATION_TIME && msg[0].messageText.reserver != th.name;
+                    if (reservedCondition) {
+                        return th.fetchNewJob(th, wfcallback);
+                    }else{
+                        wfcallback(err, msg);
+                    }
+                }else {
+                    wfcallback(err, null);
                 }
-            }
-            wfcallback(err,msg);
-        });
+            });
+        }else{
+            wfcallback(null,null);
+        }
     }
 
     /**
@@ -196,6 +235,7 @@ class FatusWorker extends EventEmitter{
             minTimeout: 1 * 1000,           // minimum timeout allowed
             maxTimeout: 1 * 1000            // maximum timeout allowed
         });
+        console.log('======POP: ' + util.inspect(msg));
         ftOperation.attempt(
             function (currentAttempt){
                 th.fatus.popMsg(msg,function(err,res){
@@ -263,6 +303,14 @@ class FatusWorker extends EventEmitter{
      */
     setReservationTime(reservationTime){
         this.MAX_RESERVATION_TIME = reservationTime;
+    }
+
+    /**
+     * set the maximum number of failure that a job allow
+     * @param maxFail
+     */
+    setMaxFails(maxFail){
+        this.MAX_FAIL_ALLOWED = maxFail;
     }
 
 }
