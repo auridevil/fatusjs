@@ -3,8 +3,8 @@
 
 /** constants */
 const MODULE_NAME = 'Fatusjs'
-const FATUS_QUEUE_NAME = process.env.FATUS_QUEUE_NAME || 'fatusjs-queue';
-const FATUS_QUEUE_FAIL_NAME = process.env.FATUS_QUEUE_NAME || 'fatusjs-queue-fail';
+const FATUS_QUEUE_NAME = process.env.FATUS_QUEUE_NAME || 'fatusjs-queue-test';
+const FATUS_QUEUE_FAIL_NAME = process.env.FATUS_QUEUE_FAIL_NAME || 'fatusjs-queue-fail';
 const FATUS_MAX_WORKER = process.env.FATUS_MAX_WORKER || 3;
 const FATUS_EQ_RETRY_TIME = process.env.FATUS_EQ_RETRY_TIME || 4000; // millisec
 const FATUS_WRK_RETRY_ATTEMP = process.env.FATUS_WRK_RETRY_ATTEMP || 2;
@@ -20,6 +20,7 @@ const FatusPriorityWorker = require('./priorityworker');
 const FatusFailWorker = require('./failworker');
 const FatusCollectorWorker = require('./collectorworker');
 const MessageJob = require('./messagejob');
+const ServeQueue = require('./servequeue');
 
 /** outher refs */
 const assert = require('assert');
@@ -493,6 +494,17 @@ class Fatusjs extends EventEmitter{
             clearInterval(this.autoInterval);
             this.autoInterval = false;
         }
+    }
+
+
+    /**
+     * wrapper for the serve queue invoke
+     * @param req
+     * @param res
+     */
+    serveQueue(req,res){
+        let sq = new ServeQueue();
+        sq.invoke(req,res);
     }
 
 }

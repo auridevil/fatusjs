@@ -76,46 +76,46 @@ failJob.setSimpleJob(msgObjFailSimple.module,msgObjFailSimple.function,msgObjFai
 
 
 /*************************** TEST SECTION *************************************/
-//describe('Init',function(){
-//
-//    var fatusQueue = Fatusjs.instance;
-//    var fatus2 = Fatusjs.instance;
-//
-//    it('should get a fatus instance',function(){
-//        "use strict";
-//        assert.equal(typeof fatusQueue,'object');
-//    })
-//
-//    it('should be singleton',function(){
-//        "use strict";
-//        assert.deepEqual(fatusQueue,fatus2);
-//    })
-//
-//    it('should clear the worker and return size 0',function(done){
-//        "use strict";
-//
-//        fatusQueue.clear(function onClear(err,res){
-//            assert.equal(err,null);
-//
-//            fatusQueue.getQueueSize(function onGet(err,res){
-//                assert.equal(err,null);
-//                assert.equal(res,0);
-//            });
-//        });
-//
-//        setTimeout(done,6000);
-//
-//    })
-//
-//    it('should add worker',function(done){
-//        "use strict";
-//        fatusQueue.addWorker();
-//
-//
-//        setTimeout(done,10000);
-//    })
-//
-//});
+describe('Init',function(){
+
+    var fatusQueue = Fatusjs.instance;
+    var fatus2 = Fatusjs.instance;
+
+    it('should get a fatus instance',function(){
+        "use strict";
+        assert.equal(typeof fatusQueue,'object');
+    })
+
+    it('should be singleton',function(){
+        "use strict";
+        assert.deepEqual(fatusQueue,fatus2);
+    })
+
+    it('should clear the worker and return size 0',function(done){
+        "use strict";
+
+        fatusQueue.clear(function onClear(err,res){
+            assert.equal(err,null);
+
+            fatusQueue.getQueueSize(function onGet(err,res){
+                assert.equal(err,null);
+                assert.equal(res,0);
+            });
+        });
+
+        setTimeout(done,6000);
+
+    })
+
+    it('should add worker',function(done){
+        "use strict";
+        fatusQueue.addWorker();
+
+
+        setTimeout(done,10000);
+    })
+
+});
 //
 //describe('Run Processes',function(){
 //
@@ -306,48 +306,48 @@ failJob.setSimpleJob(msgObjFailSimple.module,msgObjFailSimple.function,msgObjFai
 //
 //    })
 //});
-
-describe('use failing simple job',function() {
-
-    var fatusQueue = Fatusjs.instance;
-
-    it('should get a fatus instance',function(){
-        "use strict";
-        assert.equal(typeof fatusQueue,'object');
-    })
-
-    it('should clear the worker',function(done){
-        "use strict";
-
-        fatusQueue.clear(function onClear(err,res){
-            assert.equal(err,null);
-            done();
-        });
-    })
-
-    it('should clear the fails',function(done){
-        "use strict";
-
-        fatusQueue.clearFail(function onClear(err,res){
-            assert.equal(err,null);
-            done();
-        });
-    })
-
-
-    it('should manage single failing op the worker',function(done){
-        "use strict";
-
-        fatusQueue.insertInQueue(failJob.getMsg(),function onComplete(err,res){
-            assert.equal(err,null);
-        })
-
-
-        setTimeout(done,1000000);
-
-    })
-
-});
+//
+//describe('use failing simple job',function() {
+//
+//    var fatusQueue = Fatusjs.instance;
+//
+//    it('should get a fatus instance',function(){
+//        "use strict";
+//        assert.equal(typeof fatusQueue,'object');
+//    })
+//
+//    it('should clear the worker',function(done){
+//        "use strict";
+//
+//        fatusQueue.clear(function onClear(err,res){
+//            assert.equal(err,null);
+//            done();
+//        });
+//    })
+//
+//    it('should clear the fails',function(done){
+//        "use strict";
+//
+//        fatusQueue.clearFail(function onClear(err,res){
+//            assert.equal(err,null);
+//            done();
+//        });
+//    })
+//
+//
+//    it('should manage single failing op the worker',function(done){
+//        "use strict";
+//
+//        fatusQueue.insertInQueue(failJob.getMsg(),function onComplete(err,res){
+//            assert.equal(err,null);
+//        })
+//
+//
+//        setTimeout(done,1000000);
+//
+//    })
+//
+//});
 
 //fatusQueue.insertInQueue({msg:'ciaone 1000',obj:{ciao:'ciao'}},function onComplete(err,dat,dat2){
 //    "use strict";

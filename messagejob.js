@@ -13,6 +13,7 @@ const assert = require('assert');
 const retry = require('retry');
 const async = require('async');
 const moment = require('moment');
+const funcster = require('funcster');
 
 class MessageJob extends EventEmitter {
 
@@ -78,7 +79,8 @@ class MessageJob extends EventEmitter {
     updateStepPayload(payload){
         assert.ok(!this.isSimple,'the job is a simple obj');
         if(this.stepNext.length>0) {
-            if(payload.postRunFunction && (typeof payload.postRunFunction == 'function')){
+            if(payload.postRunFunction){
+                payload = funcster.deepDeserialize(payload);
                 try {
                     payload = payload.postRunFunction(payload);
                 }catch(err){
