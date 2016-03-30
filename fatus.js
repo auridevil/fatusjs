@@ -256,7 +256,7 @@ class Fatusjs extends EventEmitter{
      */
     getQueueTop(onGet){
         assert.equal(typeof onGet,'function','onGet must be a function');
-        this.queueMgr.getMessage(FATUS_QUEUE_NAME,{visibilitytimeout:1},onGet);
+        this.queueMgr.getMessage(FATUS_QUEUE_NAME,{visibilitytimeout:0},onGet);
     }
     /**
      * get the first element of the fail queue
@@ -264,7 +264,7 @@ class Fatusjs extends EventEmitter{
      */
     getFailTop(onGet){
         assert.equal(typeof onGet,'function','onGet must be a function');
-        this.queueMgr.getMessage(FATUS_QUEUE_FAIL_NAME,{visibilitytimeout:1},onGet);
+        this.queueMgr.getMessage(FATUS_QUEUE_FAIL_NAME,{visibilitytimeout:0},onGet);
     }
 
     /**
@@ -502,7 +502,7 @@ class Fatusjs extends EventEmitter{
      * @param req
      * @param res
      */
-    serveQueue(req,res){
+    static serveQueue(req,res){
         let sq = new ServeQueue();
         sq.invoke(req,res);
     }
