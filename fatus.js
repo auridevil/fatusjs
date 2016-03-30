@@ -446,7 +446,7 @@ class Fatusjs extends EventEmitter{
         if(!this.monitorInterval) {
             this.monitorInterval = setInterval(
                 functionPtr,
-                10000
+                120000
             );
         }
 
@@ -460,7 +460,7 @@ class Fatusjs extends EventEmitter{
         if(!this.failInterval) {
             this.failInterval = setInterval(
                 functionPtr,
-                6000
+                180000
             );
         }
     }
