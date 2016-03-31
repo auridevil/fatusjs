@@ -4,7 +4,6 @@
  *
  */
 
-
 'use strict';
 const MODULE_NAME = 'FatusFailWorker';
 const FatusWorker = require('./worker');
@@ -32,6 +31,7 @@ class FatusFailWorker extends FatusWorker {
      * @param th
      * @param jobObj
      * @param wfcallback
+     * @override
      */
     execute(th, jobObj, cb) {
         console.log(MODULE_NAME + '%s: executing from fail queue ', th.name);
@@ -47,6 +47,7 @@ class FatusFailWorker extends FatusWorker {
      * get the fail queue size
      * @param fatus
      * @param onGet
+     * @override
      */
     getQueueSize(fatus,onGet){
         fatus.getFailSize(onGet);
@@ -84,6 +85,7 @@ class FatusFailWorker extends FatusWorker {
      * @param msg the message to pop
      * @param th the reference to the worker
      * @param callback classic err/res callback
+     * @override
      */
     popMessageFT(msg, th, callback){
         th.emit('pop',msg.messageText);
@@ -110,6 +112,7 @@ class FatusFailWorker extends FatusWorker {
      * @param msg
      * @param th
      * @param callback
+     * @override
      */
     updateMessageFT(msg, th, callback){
         var ftOperation = retry.operation({

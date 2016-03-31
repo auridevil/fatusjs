@@ -72,29 +72,37 @@ class FatusWorker extends EventEmitter{
      */
     single(){
         let th = this;
+        // monitor the number of iteration to avoid stack overflows 
         this.iteration = this.iteration+1;
         let msgObj,jobObj;
         try {
             async.waterfall([
 
-                    // get work from queue
+                    // get jobs from queue
                     function top(wfcallback) {
                         console.log(MODULE_NAME + '%s: fetch from queue ', th.name);
                         //th.fetchNewJob(th, wfcallback);
-                        th.fetchIteration = 0;
+                        //monitor the number of fetch iteration to avoid stack overflows
+                        th.fetchIteration = 0; 
                         th.fetchNewJob(th,wfcallback);
                     },
 
-                    // reserve the job
+                    // reserve the job to execute it
                     function reserve(msg, wfcallback){
                         if(msg && msg[0] && msg[0].messageId){
                             msgObj = msg[0];
                             console.log( MODULE_NAME + '%s: msg found, reserving %s',th.name,msgObj.messageId);
+                            
+                            // create the messageJob and reserve it
                             jobObj = new MessageJob(msgObj);
                             jobObj.reserve(th, wfcallback);
+                            
+                            // set the job on the worker
                             th.processing = jobObj;
                             th.processingId = msgObj.messageId;
                         }else {
+                            
+                            // debugging p
                             th.failedIteration = (th.failedIteration || 0)+1;
                             if(th.failedIteration==5){
                                 th.fatus.getAll(function onGet(err,res){
@@ -121,25 +129,30 @@ class FatusWorker extends EventEmitter{
                 ],
                 // update if error, else ok
                 function _onFinish(err,val){
+                    // error in execution
                     if(err && typeof err == 'object' && msgObj && jobObj){
-                        jobObj.fails(err);
                         // async error, update message
                         th.updateMsgOnError(jobObj, msgObj, err, th);
                         console.log(MODULE_NAME + '%s: FAILED JOB  %s', th.name, util.inspect(jobObj.getCompleteMsg()));
                     }else if (err){
+                        // inline error from callbacks, to be ignored without msg
                         //console.log('NOT PROPERLY FAILED JOB : %s', util.inspect(msgObj));
                     }else{
+                        // nothing to be done
                         //console.log(MODULE_NAME)
                     }
+                
+                    // deregister job from worker
                     th.processing = null;
                     th.processingId = null;
                     th.emit('runcomplete');
+                
                     // repeat only if stack is not full
                     if(th.iteration<th.STACK_PROTECTION_THRSD && th.fetchIteration<(th.STACK_PROTECTION_THRSD*2)){
-                        th.run();
+                        th.run(); // run-> single
                     }else{
                         console.log(MODULE_NAME + '%s: stack protection threshold, KILLING WORKER',th.name);
-                        th.fatus.removeWorker(th.name);
+                        th.fatus.removeWorker(th.name); // killme
                     }
                 });
         }catch(err){
@@ -153,9 +166,9 @@ class FatusWorker extends EventEmitter{
 
     /**
      * overridable execute method
-     * @param th
-     * @param jobObj
-     * @param wfcallback
+     * @param th pointer to this
+     * @param jobObj the jobobj
+     * @param wfcallback the callback
      */
     execute(th, jobObj, wfcallback) {
         console.log(MODULE_NAME + '%s: executing from queue ', th.name);

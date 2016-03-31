@@ -48,6 +48,7 @@ class FatusCollectorWorker extends FatusWorker {
 
     /**
      * execute a single peek-execute-pop cycle
+     * @override
      */
     single(){
         let th = this;
@@ -78,7 +79,7 @@ class FatusCollectorWorker extends FatusWorker {
                             wfcallback(new Error('queue is empty'),null);
                         }
                     },
-                    // pop message to insert
+                    // pop message to insert into the fail queue
                     function postExecute(res, wfcallback){
                         th.popMessageAndInsert(msgObj,th,wfcallback);
                     }
@@ -113,7 +114,7 @@ class FatusCollectorWorker extends FatusWorker {
      * @param callback to call in the end
      */
     popMessageAndInsert(msg,th,callback){
-        msg.reserved
+        msg.reserved = false;
         th.fatus.insertInFailQueue(msg,callback);
     }
 
