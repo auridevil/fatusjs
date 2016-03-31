@@ -95,7 +95,14 @@ class FatusWorker extends EventEmitter{
                             th.processing = jobObj;
                             th.processingId = msgObj.messageId;
                         }else {
-                            console.log( MODULE_NAME + '%s: all queue elements are not processable -retry later- %s',th.name,util.inspect(msgObj));
+                            th.failedIteration = (th.failedIteration || 0)+1;
+                            if(th.failedIteration==5){
+                                th.fatus.getAll(function onGet(err,res){
+                                   console.log(MODULE_NAME + '%s: queue is %s', util.inspect(res,{colors:true}));
+                                });
+                            }else{
+                                console.log( MODULE_NAME + '%s: all queue elements are not processable -retry later- %s',th.name,util.inspect(msgObj));
+                            }
                             wfcallback(new Error('queue is empty'),null);
                         }
                     },

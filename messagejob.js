@@ -22,9 +22,11 @@ class MessageJob extends EventEmitter {
         if (msg && msg.messageText && msg.messageText.isSimple) {
             this.setSimpleJob(msg.messageText.module, msg.messageText.function, msg.messageText.payload, msg.messageText.fail, msg.messageText.failArray);
             this.originalMsg = msg;
+            this.id = msg.messageText.id;
         } else if (msg && msg.messageText && msg.messageText.isMulti) {
             this.setMultiJobFromMsg(msg.messageText);
             this.originalMsg = msg;
+            this.id = msg.messageText.id;
         } else {
             // NOTHING TO DO, NEW OBJECT
         }
@@ -124,6 +126,7 @@ class MessageJob extends EventEmitter {
             outMsg.reserved = this.reserved;
             outMsg.dtReserve = this.dtReserve;
         }
+        outMsg.id = this.id;
         return outMsg;
     }
 
