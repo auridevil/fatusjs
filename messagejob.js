@@ -364,8 +364,10 @@ class MessageJob extends EventEmitter {
         this.reserved = false;
         try {
             this.failArray.push(util.inspect(err));
+            // limit the fail array to 20 element
             if(this.failArray.length>20){
-                this.failArray.splice(0,1);
+                let diff = this.failArray.length - 20;
+                this.failArray.splice(0,diff);
             }
         }catch(inspecterr){
             console.error(inspecterr);
