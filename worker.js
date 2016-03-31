@@ -236,6 +236,7 @@ class FatusWorker extends EventEmitter{
             let NOW = moment();
             th.fatus.getQueueTop(function onGet(err, msg) {
                 if (!err && msg && msg[0] && msg[0].messageText) {
+                    // TODO extract this condition
                     let reservedCondition = msg[0].messageText.reserved && moment(msg[0].messageText.dtReserve).diff(NOW) < th.MAX_RESERVATION_TIME && msg[0].messageText.reserver != th.name;
                     if (reservedCondition) {
                         return th.fetchNewJob(th, wfcallback);
@@ -265,7 +266,7 @@ class FatusWorker extends EventEmitter{
             minTimeout: 1 * 1000,           // minimum timeout allowed
             maxTimeout: 1 * 1000            // maximum timeout allowed
         });
-        console.log('======POP: ' + util.inspect(msg));
+        console.log(MODULE_NAME + th.name + ': POP:[' + util.inspect(msg,{color:true}) + ']' );
         ftOperation.attempt(
             function (currentAttempt){
                 th.fatus.popMsg(msg,function(err,res){
