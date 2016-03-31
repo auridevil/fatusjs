@@ -9,6 +9,7 @@ const azureQueue = require('azure-queue-node');
 const underscore = require('underscore');
 const async = require('async');
 const assert = require('assert');
+const util = require('util');
 
 
 /**
@@ -130,6 +131,7 @@ class AzureQueue{
         assert.equal(typeof popReceipt,'string','popReceipt must be a function');
         assert.equal(typeof msg,'object','msg must be a function');
         assert.equal(typeof onUpdate,'function','onUpdate must be a function');
+        //console.log('========== %s ======= %s ====== %s ========',messageId,popReceipt,util.inspect(msg));
         this.queueClient.updateMessage(queueName,messageId,popReceipt,visibilityTimeout||DEFUALT_VISIBILITY_TIMEOUT,msg,options,onUpdate);
     }
 

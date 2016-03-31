@@ -200,7 +200,9 @@ class MessageJob extends EventEmitter {
 
                 // reserve the object
                 function reserve(wfcallback){
-                    th.reserve(worker,wfcallback);
+                    //th.reserve(worker,wfcallback);
+                    // HERE IS ALREADY RESERVED BY WORKER
+                    wfcallback(null,null);
                 },
 
                 // execute
@@ -218,12 +220,12 @@ class MessageJob extends EventEmitter {
                 function update(paramObj,wfcallback){
                     th.popStep();
                     th.updateStepPayload(paramObj);
-                    th.reserved = false;
-                    worker.updateMsg(th.getCompleteMsg(),wfcallback);
+                    //worker.updateMsg(th.getCompleteMsg(),wfcallback); // SKIP UPDATE
+                    wfcallback();
                 },
 
                 // complete step
-                function complete(res,wfcallback){
+                function complete(wfcallback){
                     wfcallback();
                 }
             ],
