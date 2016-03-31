@@ -61,7 +61,7 @@ class MessageJob extends EventEmitter {
         return this;
     }
 
-    /*
+    /**
      * init the job as a multistep job
      * @return a pointer to the job itself
      */
@@ -96,7 +96,7 @@ class MessageJob extends EventEmitter {
         return this;
     }
 
-    /*
+    /**
      * init the job from the messageText coming from azure
      * @return a pointer to the job itself
      */
