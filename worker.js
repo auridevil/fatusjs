@@ -108,8 +108,8 @@ class FatusWorker extends EventEmitter{
                                 th.fatus.getAll(function onGet(err,res){
                                    console.log(MODULE_NAME + '%s: queue is %s', th.name, util.inspect(res,{colors:true}));
                                 });
-                            }else{
-                                console.log( MODULE_NAME + '%s: all queue elements are not processable -retry later- %s',th.name,util.inspect(msgObj));
+                            }else if(th.failedIteration%2==0){
+                                console.log( MODULE_NAME + '%s: queue seems empty -retry later- waiting for eventually locked objects',th.name);
                             }
                             wfcallback(new Error('queue is empty'),null);
                         }
