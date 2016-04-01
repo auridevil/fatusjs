@@ -105,9 +105,7 @@ class FatusWorker extends EventEmitter{
                             // debugging p
                             th.failedIteration = (th.failedIteration || 0)+1;
                             if(th.failedIteration==5){
-                                th.fatus.getAll(function onGet(err,res){
-                                   console.log(MODULE_NAME + '%s: queue is %s', th.name, util.inspect(res,{colors:true}));
-                                });
+                                printQueue(th);
                             }else if(th.failedIteration%2==0){
                                 console.log( MODULE_NAME + '%s: queue seems empty -retry later- waiting for eventually locked objects',th.name);
                             }
@@ -162,6 +160,16 @@ class FatusWorker extends EventEmitter{
                 th.updateMsgOnError(jobObj, msgObj, err, th);
             }
         }
+    }
+
+    /**
+     * print all the queue to console
+     * @param th pointer to worker
+     */
+    printQueue(th) {
+        th.fatus.getAll(function onGet(err, res) {
+            console.log(MODULE_NAME + '%s: queue is %s', th.name, util.inspect(res, {colors: true}));
+        });
     }
 
     /**

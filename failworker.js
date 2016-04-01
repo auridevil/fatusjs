@@ -44,6 +44,16 @@ class FatusFailWorker extends FatusWorker {
     }
 
     /**
+     * print all the queue to console
+     * @param th pointer to worker
+     */
+    printQueue(th) {
+        th.fatus.getAllFail(function onGet(err, res) {
+            console.log(MODULE_NAME + '%s: fail queue is %s', th.name, util.inspect(res, {colors: true}));
+        });
+    }
+
+    /**
      * get the fail queue size
      * @param fatus
      * @param onGet
