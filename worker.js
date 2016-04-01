@@ -196,7 +196,7 @@ class FatusWorker extends EventEmitter{
         msgObj = jobObj.getCompleteMsg();
         th.updateMessageFT(msgObj, th, function onUpdate(err,res){
             if(err){
-                console.log(MODULE_NAME + '%s: FATAL cannot update message');
+                console.log(MODULE_NAME + '%s: FATAL cannot update message %s, %s',th.name,jobObj.id,jobObj.getCompleteMsg().messageText);
                 console.error(err);
             }else{
                 if(res && res.popReceipt){
@@ -269,7 +269,7 @@ class FatusWorker extends EventEmitter{
      */
     isMsgReserved(msg, NOW, th) {
         let timeDifference = Math.abs(moment(msg[0].messageText.dtReserve).diff(NOW));
-        console.log('TIME DIFFERENCE %s ', timeDifference);
+        //console.log('TIME DIFFERENCE %s ', timeDifference);
         let reservedCondition = msg[0].messageText.reserved && timeDifference < th.MAX_RESERVATION_TIME && msg[0].messageText.reserver != th.name;
         return reservedCondition;
     }
