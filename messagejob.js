@@ -202,7 +202,7 @@ class MessageJob extends EventEmitter {
         } catch (error) {
             // sync errors
             console.error(error);
-            th.fails(err);
+            th.fails(error);
             onComplete(error,null);
         }
     }
