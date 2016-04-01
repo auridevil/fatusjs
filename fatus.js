@@ -9,7 +9,7 @@ const FATUS_MAX_WORKER = process.env.FATUS_MAX_WORKER || 3;
 const FATUS_EQ_RETRY_TIME = process.env.FATUS_EQ_RETRY_TIME || 4000; // millisec
 const FATUS_WRK_RETRY_ATTEMP = process.env.FATUS_WRK_RETRY_ATTEMP || 2;
 const FATUS_WRK_STACK_TRSHLD = process.env.FATUS_WRK_STACK_TRSHLD || 10;
-const FATUS_JOB_RESERV_TIME = process.env.FATUS_JOB_RESERV_TIME || 20; // sec
+const FATUS_JOB_RESERV_TIME = process.env.FATUS_JOB_RESERV_TIME || 8000; // millisec
 const FATUS_MAX_FAIL = process.env.FATUS_MAX_FAIL || 10; // max num of fails
 const FATUS_MAX_FAIL_TOTAL = process.env.FATUS_MAX_FAIL_TOTAL || 1000; // total number of fails before be suspended
 
@@ -77,6 +77,7 @@ class Fatusjs extends EventEmitter{
         this.registerMonitor();
         this.registerFailover();
         this.registerAutoWorker();
+        this.registerPrint();
 
     }
 
@@ -427,6 +428,21 @@ class Fatusjs extends EventEmitter{
     }
 
     /**
+     * statically print the queue
+     */
+    static printQ(){
+        let fatus = Fatusjs.instance;
+        fatus.getAll(function onGet(err, res) {
+            if(res && res.length>0)
+            console.log(MODULE_NAME + '%s: queue is %s', th.name, util.inspect(res, {colors: true}));
+        });
+        fatus.getAllFail(function onGet(err, res) {
+            if(res && res.length>0)
+            console.log(MODULE_NAME + '%s: queue fail is %s', th.name, util.inspect(res, {colors: true}));
+        });
+    }
+
+    /**
      * register a scheduled auto worker
      */
     registerAutoWorker(){
@@ -460,6 +476,19 @@ class Fatusjs extends EventEmitter{
         var functionPtr = Fatusjs.failRetry;
         if(!this.failInterval) {
             this.failInterval = setInterval(
+                functionPtr,
+                180000
+            );
+        }
+    }
+
+    /**
+     * register a scheduled fail worker
+     */
+    registerPrint(){
+        var functionPtr = Fatusjs.printQ;
+        if(!this.printInterval) {
+            this.printInterval = setInterval(
                 functionPtr,
                 180000
             );

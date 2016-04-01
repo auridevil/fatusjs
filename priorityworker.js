@@ -26,7 +26,7 @@ class FatusPriorityWorker extends FatusWorker {
         if(th.fetchIteration<(th.STACK_PROTECTION_THRSD*2)) {
             th.fatus.getQueueTop(function onGet(err, msg) {
                 if (!err && msg && msg[0] && msg[0].messageText) {
-                    let reservedCondition = msg[0].messageText.reserved && moment(msg[0].messageText.dtReserve).diff(NOW) < th.MAX_RESERVATION_TIME && msg[0].messageText.reserver != th.name;
+                    let reservedCondition = th.isMsgReserved(msg,NOW,th);
                     let notfailedCondition = msg[0].messageText.fail;
                     if (reservedCondition || notfailedCondition){
                         return th.fetchNewJob(th, wfcallback);

@@ -268,7 +268,9 @@ class FatusWorker extends EventEmitter{
      * @returns {URI.characters.reserved|{encode}|*|boolean}
      */
     isMsgReserved(msg, NOW, th) {
-        let reservedCondition = msg[0].messageText.reserved && moment(msg[0].messageText.dtReserve).diff(NOW) < th.MAX_RESERVATION_TIME && msg[0].messageText.reserver != th.name;
+        let timeDifference = moment(msg[0].messageText.dtReserve).diff(NOW);
+        console.log('TIME DIFFERENCE %s ', timeDifference);
+        let reservedCondition = msg[0].messageText.reserved && timeDifference < th.MAX_RESERVATION_TIME && msg[0].messageText.reserver != th.name;
         return reservedCondition;
     }
 

@@ -75,8 +75,7 @@ class FatusFailWorker extends FatusWorker {
             let NOW = moment();
             th.fatus.getFailTop(function onGet(err, msg) {
                 if (!err && msg && msg[0] && msg[0].messageText) {
-                    let reservedCondition = msg[0].messageText.reserved && Math.abs(moment(msg[0].messageText.dtReserve).diff(NOW,'s')) < th.MAX_RESERVATION_TIME && msg[0].messageText.reserver != th.name;
-                    if (reservedCondition) {
+                    if(th.isMsgReserved(msg, NOW, th)) {
                         return th.fetchNewJob(th, wfcallback);
                     }else{
                         wfcallback(err, msg);
