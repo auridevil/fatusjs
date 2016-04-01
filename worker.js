@@ -45,12 +45,14 @@ class FatusWorker extends EventEmitter{
     run(attempt){
         attempt = (attempt ? attempt : 0) +1;
         var th = this;
-        console.log(MODULE_NAME + '%s: running worker run()',this.name);
+        this.failedIteration = 0;
+        //console.log(MODULE_NAME + '%s: running worker run()',this.name);
         this.getQueueSize(
             this.fatus,
             function onSize(err,data){
                 if(data && data>0) {
                     //console.log(MODULE_NAME + '%s: queue not empty > execute',th.name,th.EQ_RETRY_TIME);
+                    console.log(MODULE_NAME + '%s: queue is not empty [%s]',th.name,data);
                     th.single();
                 }else if (err){
                     console.error(err);
@@ -103,7 +105,7 @@ class FatusWorker extends EventEmitter{
                         }else {
                             
                             // debugging p
-                            th.failedIteration = (th.failedIteration || 0)+1;
+                            th.failedIteration = th.failedIteration+1;
                             if(th.failedIteration%4==0){
                                 th.printQueue(th);
                             }else if(th.failedIteration%3==0){
@@ -244,9 +246,7 @@ class FatusWorker extends EventEmitter{
             let NOW = moment();
             th.fatus.getQueueTop(function onGet(err, msg) {
                 if (!err && msg && msg[0] && msg[0].messageText) {
-                    // TODO extract this condition
-                    let reservedCondition = msg[0].messageText.reserved && moment(msg[0].messageText.dtReserve).diff(NOW) < th.MAX_RESERVATION_TIME && msg[0].messageText.reserver != th.name;
-                    if (reservedCondition) {
+                    if (th.isMsgReserved(msg, NOW, th)) {
                         return th.fetchNewJob(th, wfcallback);
                     }else{
                         wfcallback(err, msg);
@@ -258,6 +258,18 @@ class FatusWorker extends EventEmitter{
         }else{
             wfcallback(null,null);
         }
+    }
+
+    /**
+     * condition test extracted for override, test if the msg is reserved
+     * @param msg
+     * @param NOW
+     * @param th
+     * @returns {URI.characters.reserved|{encode}|*|boolean}
+     */
+    isMsgReserved(msg, NOW, th) {
+        let reservedCondition = msg[0].messageText.reserved && moment(msg[0].messageText.dtReserve).diff(NOW) < th.MAX_RESERVATION_TIME && msg[0].messageText.reserver != th.name;
+        return reservedCondition;
     }
 
     /**
