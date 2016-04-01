@@ -9,7 +9,7 @@ const FATUS_MAX_WORKER = process.env.FATUS_MAX_WORKER || 3;
 const FATUS_EQ_RETRY_TIME = process.env.FATUS_EQ_RETRY_TIME || 4000; // millisec
 const FATUS_WRK_RETRY_ATTEMP = process.env.FATUS_WRK_RETRY_ATTEMP || 2;
 const FATUS_WRK_STACK_TRSHLD = process.env.FATUS_WRK_STACK_TRSHLD || 10;
-const FATUS_JOB_RESERV_TIME = process.env.FATUS_JOB_RESERV_TIME || 8000; // millisec
+const FATUS_JOB_RESERV_TIME = process.env.FATUS_JOB_RESERV_TIME || 600000; // millisec
 const FATUS_MAX_FAIL = process.env.FATUS_MAX_FAIL || 10; // max num of fails
 const FATUS_MAX_FAIL_TOTAL = process.env.FATUS_MAX_FAIL_TOTAL || 1000; // total number of fails before be suspended
 
@@ -434,11 +434,11 @@ class Fatusjs extends EventEmitter{
         let fatus = Fatusjs.instance;
         fatus.getAll(function onGet(err, res) {
             if(res && res.length>0)
-            console.log(MODULE_NAME + '%s: queue is %s', th.name, util.inspect(res, {colors: true}));
+            console.log(MODULE_NAME + ': queue is %s', util.inspect(res, {colors: true}));
         });
         fatus.getAllFail(function onGet(err, res) {
             if(res && res.length>0)
-            console.log(MODULE_NAME + '%s: queue fail is %s', th.name, util.inspect(res, {colors: true}));
+            console.log(MODULE_NAME + ': queue fail is %s', util.inspect(res, {colors: true}));
         });
     }
 
