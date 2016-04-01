@@ -106,7 +106,7 @@ class FatusWorker extends EventEmitter{
                             th.failedIteration = (th.failedIteration || 0)+1;
                             if(th.failedIteration==5){
                                 th.printQueue(th);
-                            }else if(th.failedIteration%2==0){
+                            }else if(th.failedIteration%3==0){
                                 console.log( MODULE_NAME + '%s: queue seems empty -retry later- waiting for eventually locked objects',th.name);
                             }
                             wfcallback(new Error('queue is empty'),null);
