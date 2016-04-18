@@ -12,6 +12,7 @@ const assert = require('assert');
 const retry = require('retry');
 const async = require('async');
 const moment = require('moment');
+const underscore = require('underscore');
 const funcster = require('funcster');
 
 /** 
@@ -274,15 +275,19 @@ class MessageJob extends EventEmitter {
                     let module = th.getModule(step.moduleName);
                     console.log(MODULE_NAME + ': executing %s.%s -  %s', step.moduleName, step.function,th.originalMsg ? th.originalMsg.messageId:'ND');
                     // invoke the module.function() by reflections
-                    if(step.payload.skipWorker) {
-                        // in this case the function is ignoring to be behind fatus (poor function)
-                        module[step.function](step.payload, wfcallback);
+                    if(underscore.isFunction(module[step.function])) {
+                        if (step.payload.skipWorker) {
+                            // in this case the function is ignoring to be behind fatus (poor function)
+                            module[step.function](step.payload, wfcallback);
+                        } else {
+                            // in this case the function executing is fatus aware and need the worker
+                            module[step.function](step.payload, worker, wfcallback);
+                        }
                     }else{
-                        // in this case the function executing is fatus aware and need the worker
-                        module[step.function](step.payload, worker, wfcallback);
+                        console.log(MODULE_NAME + ': STEP IS NOT A FUNCTION - Skipping It');
+                        wfcallback(null,step.payload);
                     }
                 },
-
                 // update and unlock
                 function update(paramObj,wfcallback){
                     th.popStep();
