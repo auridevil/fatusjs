@@ -8,6 +8,10 @@ var json2html = require('node-json2html');
 var async = require('async');
 var util = require('util');
 
+
+/**
+ * work in progress class for presentations purpose
+ */
 class ServeFatusQueue{
 
     invoke(req,res){

@@ -83,8 +83,28 @@ Add a new multistep job to the queue:
 Configure
 =============
 
-TODO: write configure or write to onailerua@hotmail.com for help
-TODO: add npm
+In order to work there are some mandatory configurations, all at enviroment level:
+
+AZURE_STORAGE_ACCOUNT: account name of the azure storage account
+AZURE_STORAGE_ACCESS_KEY: access key of the azure storage account
+CLOUD_STORAGE_ACCOUNT: connection string for the azure storage account
+
+The others configurations is not mandatory:
+FATUS_QUEUE_NAME: name of the queue to be created for the fatus
+FATUS_QUEUE_FAIL_NAME: name of the queue to be crated for the fatus worker failed
+FATUS_MAX_WORKER: max number of worker to be created in the pool (default 3)
+FATUS_EQ_RETRY_TIME: time that a worker waits in order to be killed at empty queue events, in milliseconds (default 4000)
+FATUS_WRK_STACK_TRSHLD: maximum number of iteration of single worker (default 10)
+FATUS_MAX_FAIL: maximum number of fail for a job (default 10)
+
+TODO
+=============
+My ideas for future improvements are:
+- create a way to manage "blocked-blocking" jobs
+- a visual presentation of the queue(s) state
+- extensive testing with multiple instances
+- possibility to manage multiple queues
+
 
 Contributions
 =============
